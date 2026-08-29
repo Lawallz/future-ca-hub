@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Você está offline | CA-ADS IFSP São Paulo</title>
+    <meta name="description" content="Página offline do site do Centro Acadêmico de ADS do IFSP Campus São Paulo." />
+    <script>
+      // Mesma preferência de animações usada no site, aplicada antes do paint.
+      (function () {
+        try {
+          var v = localStorage.getItem("caads-reduce-motion");
+          var on = v === "1" || (v === null && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+          if (on) document.documentElement.classList.add("reduce-motion");
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; min-height: 100vh; padding: 1.5rem;
+        display: grid; place-items: center;
+        background: #0a0a0a; color: #f4f5f8;
+        font: 15px/1.6 "DM Sans", system-ui, -apple-system, sans-serif;
+      }
+      .card {
+        max-width: 34rem; width: 100%; padding: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 1.5rem;
+        background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(12px);
+      }
+      .tag { font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: #8f9bff; margin: 0; }
+      h1 { font-size: 1.6rem; margin: 0.75rem 0 0.5rem; }
+      p { color: #a2a6b3; margin: 0 0 1rem; }
+      ul { margin: 0 0 1.5rem; padding-left: 1.1rem; color: #a2a6b3; }
+      li { margin-bottom: 0.35rem; }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+      a, button {
+        font: inherit; cursor: pointer; text-decoration: none;
+        padding: 0.6rem 1.1rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14);
+        color: #f4f5f8; background: transparent;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s, background 0.4s;
+      }
+      a:hover, button:hover { transform: translateY(-2px); border-color: #6d7dff; background: rgba(109, 125, 255, 0.12); }
+      .primary { background: #6d7dff; border-color: #6d7dff; color: #06070d; font-weight: 600; }
+      .reduce-motion * { transition: none !important; animation: none !important; }
+      .reduce-motion a:hover, .reduce-motion button:hover { transform: none; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <p class="tag">CA-ADS · IFSP SPO</p>
+      <h1>Você está offline</h1>
+      <p>Não conseguimos alcançar a rede agora. O site guarda uma cópia das páginas já visitadas, então parte do conteúdo continua disponível.</p>
+      <ul>
+        <li>Funciona offline: páginas já abertas, textos do banco de provas, grade de horários, tutoriais e mapa do campus.</li>
+        <li>Precisa de internet: abrir pastas do Google Drive, WhatsApp, Instagram, SUAP e AVA/Moodle.</li>
+      </ul>
+      <div class="actions">
+        <button class="primary" onclick="location.reload()">Tentar novamente</button>
+        <a href="/">Voltar ao início</a>
+        <a href="/#tutoriais">Tutoriais</a>
+        <a href="/#horarios">Horários</a>
+      </div>
+    </main>
+    <script>
+      window.addEventListener("online", function () { location.reload(); });
+    </script>
+  </body>
+</html>
