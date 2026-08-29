@@ -1,4 +1,4 @@
-# CA-ADS Nexus 🚀
+# CA-ADS Nexus 
 
 Plataforma web oficial do **Centro Acadêmico de Análise e Desenvolvimento de Sistemas (CA-ADS)** do IFSP - Campus São Paulo. 
 
@@ -6,7 +6,7 @@ Um projeto desenvolvido com foco em alta performance, UI/UX futurista (Dark Mode
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+##  Tecnologias Utilizadas
 
 Este projeto foi construído utilizando uma stack moderna de desenvolvimento front-end:
 
@@ -19,7 +19,7 @@ Este projeto foi construído utilizando uma stack moderna de desenvolvimento fro
 
 ---
 
-## 📂 Módulos da Aplicação
+##  Módulos da Aplicação
 
 1. **Hero Section & Navegação:** Header fixo translúcido com *backdrop-blur*, indicador animado e atalhos fluidos.
 2. **Banco de Provas & Conteúdos:** Repositórios organizados por período do curso com transições de elevação (*hover lift*).
@@ -30,7 +30,7 @@ Este projeto foi construído utilizando uma stack moderna de desenvolvimento fro
 
 ---
 
-## ⚙️ Como Rodar o Projeto Localmente
+##  Como Rodar o Projeto Localmente
 
 Se preferir rodar e testar o projeto direto na sua máquina, siga os passos abaixo:
 
