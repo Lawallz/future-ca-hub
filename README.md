@@ -41,5 +41,5 @@ Você precisa ter o **Node.js** e o **npm** instalados na sua máquina ([instale
 
 1. Clone o repositório:
    ```sh
-   git clone <url-do-seu-repositorio>
-   cd <nome-do-diretorio>
+   git clone https://github.com/Lawallz/future-ca-hub
+   cd future-ca-hub-main
