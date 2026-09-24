@@ -110,6 +110,14 @@ const aulas: Aula[] = [
       sala: "Bloco C - Sala 214",
       periodo: "2",
   },
+   {
+    disciplina: "Banco de Dados 2",
+    professor: "Prof. Eurides Balbino",
+    dia: "Terça-feira",
+    horario: "19:00 - 22:30",
+    sala: "Bloco A – Sala 310",
+    periodo: "1º",
+  },
   {
     disciplina: "SPODWE2 - Desenvolvimento Web 2",
     professor: "Prof. Matheus Pereira",
