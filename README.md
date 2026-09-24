@@ -41,10 +41,5 @@ Você precisa ter o **Node.js** e o **npm** instalados na sua máquina ([instale
 
 1. Clone o repositório:
    ```sh
-<<<<<<< HEAD
    git clone https://github.com/Lawallz/future-ca-hub
    cd future-ca-hub-main
-=======
-   git clone <url-do-seu-repositorio>
-   cd <nome-do-diretorio>
->>>>>>> acdd7a2 (Atualização do mapa, bloco A inserido)
