@@ -59,11 +59,7 @@ function getSnapshot() {
 
 /** SSR renders the animated default; the client syncs on hydration. */
 export function useReduceMotion(): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    () => false,
-  );
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
 
 /** Inline script that applies the class before first paint (no flash). */

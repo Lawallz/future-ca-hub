@@ -1,33 +1,67 @@
+import { ArrowUp, ArrowUpRight } from "lucide-react";
+import { sections, siteLinks } from "@/data/site";
+import { MotionToggle } from "./MotionToggle";
 export function Footer() {
   return (
-    <footer className="relative border-t border-border px-5 py-14">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="font-display text-sm font-bold text-foreground">
-            CA<span className="neon-text">-ADS</span> · IFSP Campus São Paulo
-          </p>
-          <p className="mt-2 max-w-md text-[13px] text-muted-foreground">
-            Centro Acadêmico de Análise e Desenvolvimento de Sistemas. Site mantido por estudantes,
-            para estudantes.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { l: "WhatsApp", h: "https://chat.whatsapp.com/IZHNKdFfjiE3OaIiV5mzT4?s=cl&p=a&mlu=1"},
-            { l: "Instagram", h: "https://www.instagram.com/caat.ifspo/" },
-            { l: "SUAP", h: "https://suap.ifsp.edu.br" },
-            { l: "Moodle", h: "https://eadcampus.spo.ifsp.edu.br/my/" },
-          ].map((i) => (
-            <a
-              key={i.l}
-              href={i.h}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="rounded-full border border-border px-4 py-2 text-[13px] text-muted-foreground transition-all duration-400 ease-[var(--ease-fluid)] hover:border-neon hover:text-foreground"
-            >
-              {i.l}
+    <footer className="portal-footer">
+      <div className="site-container">
+        <div className="footer-main">
+          <div>
+            <a href="#top" className="brand">
+              <span className="brand-mark">
+                ca<span>.</span>
+              </span>
+              <span>
+                ADS<span className="brand-campus">IFSP / SÃO PAULO</span>
+              </span>
             </a>
-          ))}
+            <h2>
+              A gente aprende.
+              <br />A gente constrói junto.
+            </h2>
+            <p>
+              Um ponto de encontro feito por estudantes
+              <br />
+              de Análise e Desenvolvimento de Sistemas.
+            </p>
+          </div>
+          <nav aria-label="Explore o portal">
+            <span className="eyebrow">EXPLORE</span>
+            {sections.map((link) => (
+              <a key={link.href} href={link.href}>
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <nav aria-label="Links externos">
+            <span className="eyebrow">FIQUE POR PERTO</span>
+            {[
+              { label: "Fale com o CA", href: siteLinks.contact },
+              { label: "Instagram", href: siteLinks.instagram },
+              { label: "SUAP", href: siteLinks.suap },
+              { label: "Moodle", href: siteLinks.moodle },
+            ].map((link) => (
+              <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer">
+                {link.label}
+                <ArrowUpRight size={14} />
+                <span className="sr-only">(nova aba)</span>
+              </a>
+            ))}
+          </nav>
+        </div>
+        <div className="footer-bottom">
+          <p>
+            CA-ADS · IFSP Campus São Paulo
+            <br />
+            <small>
+              Portal estudantil. Confirme informações acadêmicas nos canais institucionais.
+            </small>
+          </p>
+          <MotionToggle />
+          <a className="back-top" href="#top">
+            Voltar ao topo
+            <ArrowUp size={17} />
+          </a>
         </div>
       </div>
     </footer>

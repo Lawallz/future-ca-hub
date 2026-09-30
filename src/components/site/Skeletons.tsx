@@ -3,7 +3,7 @@ export function Shimmer({ className = "" }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`block animate-pulse rounded-full bg-foreground/10 ${className}`}
+      className={`bg-foreground/10 block animate-pulse rounded-full ${className}`}
     />
   );
 }

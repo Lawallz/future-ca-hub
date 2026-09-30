@@ -33,11 +33,9 @@ export function applyServiceWorkerUpdate() {
     window.location.reload();
     return;
   }
-  navigator.serviceWorker.addEventListener(
-    "controllerchange",
-    () => window.location.reload(),
-    { once: true },
-  );
+  navigator.serviceWorker.addEventListener("controllerchange", () => window.location.reload(), {
+    once: true,
+  });
   waitingWorker.postMessage({ type: "SKIP_WAITING" });
 }
 

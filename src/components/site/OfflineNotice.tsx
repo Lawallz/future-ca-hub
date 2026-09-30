@@ -31,37 +31,37 @@ export function OfflineNotice() {
       aria-label="Você está offline"
       className="fixed inset-x-0 bottom-0 z-[70] px-4 pb-4 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[26rem] sm:px-0"
     >
-      <div className="glass rounded-3xl border border-border p-5 shadow-2xl">
-        <p className="text-[11px] tracking-[0.2em] text-neon-soft uppercase">Sem conexão</p>
-        <h2 className="mt-2 text-lg font-semibold text-foreground">Você está offline</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          O conteúdo já carregado continua disponível: banco de provas, grade de horários,
-          tutoriais e mapa do campus. Links externos (Drive, WhatsApp, Instagram, SUAP e AVA)
-          voltam quando a internet voltar.
+      <div className="glass border-border rounded-3xl border p-5 shadow-2xl">
+        <p className="text-neon-soft text-[11px] tracking-[0.2em] uppercase">Sem conexão</p>
+        <h2 className="text-foreground mt-2 text-lg font-semibold">Você está offline</h2>
+        <p className="text-muted-foreground mt-2 text-sm">
+          O conteúdo já carregado continua disponível: banco de provas, grade de horários, tutoriais
+          e mapa do campus. Links externos (Drive, WhatsApp, Instagram, SUAP e AVA) voltam quando a
+          internet voltar.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <a
             href="#horarios"
-            className="rounded-full border border-border px-3 py-1.5 text-xs text-foreground transition-colors duration-300 hover:border-neon"
+            className="border-border text-foreground hover:border-neon rounded-full border px-3 py-1.5 text-xs transition-colors duration-300"
           >
             Horários
           </a>
           <a
             href="#tutoriais"
-            className="rounded-full border border-border px-3 py-1.5 text-xs text-foreground transition-colors duration-300 hover:border-neon"
+            className="border-border text-foreground hover:border-neon rounded-full border px-3 py-1.5 text-xs transition-colors duration-300"
           >
             Tutoriais
           </a>
           <a
             href="#mapa"
-            className="rounded-full border border-border px-3 py-1.5 text-xs text-foreground transition-colors duration-300 hover:border-neon"
+            className="border-border text-foreground hover:border-neon rounded-full border px-3 py-1.5 text-xs transition-colors duration-300"
           >
             Mapa
           </a>
           <button
             type="button"
             onClick={() => setDismissed(true)}
-            className="ml-auto rounded-full px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-300 hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground ml-auto rounded-full px-3 py-1.5 text-xs transition-colors duration-300"
           >
             Fechar
           </button>

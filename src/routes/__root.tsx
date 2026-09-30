@@ -17,19 +17,19 @@ import { notifyServiceWorkerUpdate } from "../lib/sw-update";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="bg-background flex min-h-screen items-center justify-center px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+        <h1 className="text-foreground text-7xl font-bold">404</h1>
+        <h2 className="text-foreground mt-4 text-xl font-semibold">Página não encontrada</h2>
+        <p className="text-muted-foreground mt-2 text-sm">
+          A página que você procura não existe ou mudou de endereço.
         </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors"
           >
-            Go home
+            Voltar ao início
           </Link>
         </div>
       </div>
@@ -45,13 +45,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="bg-background flex min-h-screen items-center justify-center px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+        <h1 className="text-foreground text-xl font-semibold tracking-tight">
+          Não foi possível carregar esta página
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+        <p className="text-muted-foreground mt-2 text-sm">
+          Tente carregar novamente ou volte ao início do portal.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -59,15 +59,15 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors"
           >
-            Try again
+            Tentar novamente
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="border-input bg-background text-foreground hover:bg-accent inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium transition-colors"
           >
-            Go home
+            Voltar ao início
           </a>
         </div>
       </div>
@@ -80,14 +80,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { name: "theme-color", content: "#111715" },
+      { title: "CA-ADS · IFSP São Paulo" },
+      { name: "description", content: "Portal estudantil de ADS do IFSP Campus São Paulo." },
+      { name: "author", content: "CA-ADS" },
+      { property: "og:title", content: "CA-ADS · IFSP São Paulo" },
+      { property: "og:description", content: "Portal estudantil de ADS do IFSP Campus São Paulo." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -100,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico.jpg", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.ico.jpg", type: "image/jpeg" },
     ],
   }),
   shellComponent: RootShell,
@@ -111,7 +111,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: reduceMotionBootScript }} />

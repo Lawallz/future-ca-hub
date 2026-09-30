@@ -1,98 +1,197 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight, Command, Menu, Search, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { sections, siteLinks, normalizeSearch } from "@/data/site";
+import { periodos } from "@/data/academics";
 import { MotionToggle } from "./MotionToggle";
-
-const links = [
-  { href: "#provas", label: "Banco de Provas" },
-  { href: "#horarios", label: "Horários" },
-  { href: "#comunidades", label: "Comunidades" },
-  { href: "#tutoriais", label: "Tutoriais" },
-  { href: "#mapa", label: "Mapa" },
+const searchItems = [
+  ...sections.map((section) => ({ ...section, external: false })),
+  ...periodos.map((period) => ({
+    href: period.drive,
+    label: `Materiais do ${period.n}º período`,
+    description: period.disciplinas.join(" · "),
+    external: true,
+  })),
+  { href: siteLinks.suap, label: "SUAP", description: "Sistema acadêmico do IFSP", external: true },
+  {
+    href: siteLinks.moodle,
+    label: "Moodle",
+    description: "Ambiente virtual de aprendizagem",
+    external: true,
+  },
 ];
-
 export function Header() {
-  const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-
+  const [active, setActive] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const header = useRef<HTMLElement>(null);
+  const results = searchItems.filter((item) =>
+    normalizeSearch(`${item.label} ${item.description}`).includes(normalizeSearch(query)),
+  );
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const shortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setOpen(false);
+        setSearchOpen((value) => !value);
+      }
+      if (event.key === "Escape" && open) {
+        setOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    const outside = (event: PointerEvent) => {
+      if (!header.current?.contains(event.target as Node)) setOpen(false);
+    };
+    window.addEventListener("keydown", shortcut);
+    document.addEventListener("pointerdown", outside);
+    return () => {
+      window.removeEventListener("keydown", shortcut);
+      document.removeEventListener("pointerdown", outside);
+    };
+  }, [open]);
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((entry) => entry.isIntersecting);
+        if (visible.length) setActive(`#${visible[0].target.id}`);
+      },
+      { rootMargin: "-15% 0px -60% 0px" },
+    );
+    sections.forEach((section) => {
+      const element = document.querySelector(section.href);
+      if (element) observer.observe(element);
+    });
+    return () => observer.disconnect();
   }, []);
-
   return (
-    <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
-        scrolled ? "glass border-b border-border" : "border-b border-transparent"
-      }`}
-    >
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-        <a href="#top" className="group flex items-center gap-3">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon opacity-70" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neon" />
+    <header className="site-header" ref={header}>
+      <div className="site-container header-inner">
+        <a href="#top" className="brand" aria-label="CA ADS · início">
+          <span className="brand-mark" aria-hidden="true">
+            ca<span>.</span>
           </span>
-          <span className="font-display text-sm font-bold tracking-tight text-foreground">
-            CA<span className="neon-text">-ADS</span>
-            <span className="ml-2 text-[11px] font-medium text-muted-foreground">IFSP SPO</span>
+          <span>
+            ADS <span className="brand-campus">IFSP / SÃO PAULO</span>
           </span>
         </a>
-
-        <ul className="hidden items-center gap-1 md:flex">
-          {links.map((l) => (
-            <li key={l.href}>
-              <a
-                href={l.href}
-                className="rounded-full px-3 py-2 text-[13px] text-muted-foreground transition-colors duration-300 hover:bg-secondary hover:text-foreground"
-              >
-                {l.label}
-              </a>
-            </li>
+        <nav className="desktop-nav" aria-label="Navegação principal">
+          {sections.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              aria-current={active === link.href ? "location" : undefined}
+            >
+              {link.label}
+            </a>
           ))}
-        </ul>
-
-        <div className="flex items-center gap-2">
-          <MotionToggle className="hidden lg:inline-flex" />
-          <a
-            href="https://chat.whatsapp.com/IZHNKdFfjiE3OaIiV5mzT4?s=cl&p=a&mlu=1"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="hidden rounded-full border border-border bg-secondary/60 px-4 py-2 text-[13px] font-medium text-foreground transition-all duration-300 hover:border-neon hover:shadow-[var(--shadow-neon)] sm:inline-flex"
+        </nav>
+        <div className="header-actions">
+          <Dialog
+            open={searchOpen}
+            onOpenChange={(value) => {
+              setSearchOpen(value);
+              if (!value) setQuery("");
+            }}
           >
-            Entrar no grupo
+            <DialogTrigger asChild>
+              <button className="search-trigger" aria-label="Buscar no portal">
+                <Search size={17} />
+                <span>Buscar</span>
+                <kbd>
+                  <Command size={11} />K
+                </kbd>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="portal-search">
+              <DialogTitle>O que você precisa encontrar?</DialogTitle>
+              <DialogDescription>
+                Busque disciplinas, materiais e atalhos do portal.
+              </DialogDescription>
+              <label className="search-field">
+                <Search size={19} />
+                <input
+                  autoFocus
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Ex.: banco de dados, horários, SUAP…"
+                  aria-label="Buscar recursos"
+                />
+              </label>
+              <p className="search-count" role="status">
+                {results.length} resultados
+              </p>
+              <div className="search-results">
+                {results.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target={item.external ? "_blank" : undefined}
+                    rel={item.external ? "noopener noreferrer" : undefined}
+                    onClick={() => setSearchOpen(false)}
+                  >
+                    <span>
+                      <strong>{item.label}</strong>
+                      <small>{item.description}</small>
+                    </span>
+                    <ArrowUpRight size={18} />
+                    <span className="sr-only">{item.external ? "(abre em nova aba)" : ""}</span>
+                  </a>
+                ))}
+                {!results.length && (
+                  <div className="portal-empty">
+                    <Search />
+                    <h3>Nada por aqui ainda</h3>
+                    <p>Tente uma disciplina, período ou nome de seção.</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+          <a
+            className="button button-small header-contact"
+            href={siteLinks.contact}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Fale com o CA <ArrowUpRight size={15} />
+            <span className="sr-only">(nova aba)</span>
           </a>
           <button
-            type="button"
-            aria-label="Abrir menu"
+            className="icon-button mobile-menu-toggle"
+            ref={menuButton}
+            aria-label={open ? "Fechar menu" : "Abrir menu"}
             aria-expanded={open}
-            onClick={() => setOpen((v) => !v)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground md:hidden"
+            aria-controls="mobile-navigation"
+            onClick={() => setOpen((value) => !value)}
           >
-            <span className="flex flex-col gap-1">
-              <span className="block h-px w-4 bg-current" />
-              <span className="block h-px w-4 bg-current" />
-            </span>
+            {open ? <X /> : <Menu />}
           </button>
         </div>
-      </nav>
-
+      </div>
       {open && (
-        <ul className="glass flex flex-col gap-1 border-t border-border px-5 py-3 md:hidden">
-          <li className="px-3 py-2">
-            <MotionToggle />
-          </li>
-          {links.map((l) => (
-            <li key={l.href}>
-              <a
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              >
-                {l.label}
-              </a>
-            </li>
+        <nav id="mobile-navigation" className="mobile-nav" aria-label="Navegação no celular">
+          {sections.map((link) => (
+            <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
+              {link.label}
+              <ArrowUpRight size={16} />
+            </a>
           ))}
-        </ul>
+          <MotionToggle />
+          <a href={siteLinks.contact} target="_blank" rel="noopener noreferrer">
+            Falar com o CA ↗
+          </a>
+        </nav>
       )}
     </header>
   );

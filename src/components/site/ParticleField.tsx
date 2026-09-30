@@ -9,7 +9,10 @@ function detectTier(): Tier {
   if (typeof window === "undefined") return "off";
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return "low";
 
-  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  const nav = navigator as Navigator & {
+    deviceMemory?: number;
+    connection?: { saveData?: boolean };
+  };
   if (nav.connection?.saveData) return "off";
 
   const cores = navigator.hardwareConcurrency ?? 4;
@@ -23,17 +26,34 @@ function detectTier(): Tier {
   return "high";
 }
 
-const TIERS: Record<Exclude<Tier, "off">, {
-  count: number;
-  pixelRatio: number;
-  antialias: boolean;
-  wireDetail: number;
-  wireOpacity: number;
-  size: number;
-}> = {
+const TIERS: Record<
+  Exclude<Tier, "off">,
+  {
+    count: number;
+    pixelRatio: number;
+    antialias: boolean;
+    wireDetail: number;
+    wireOpacity: number;
+    size: number;
+  }
+> = {
   low: { count: 450, pixelRatio: 1, antialias: false, wireDetail: 1, wireOpacity: 0.1, size: 0.11 },
-  medium: { count: 1000, pixelRatio: 1.35, antialias: false, wireDetail: 2, wireOpacity: 0.12, size: 0.095 },
-  high: { count: 1800, pixelRatio: 1.75, antialias: false, wireDetail: 2, wireOpacity: 0.12, size: 0.085 },
+  medium: {
+    count: 1000,
+    pixelRatio: 1.35,
+    antialias: false,
+    wireDetail: 2,
+    wireOpacity: 0.12,
+    size: 0.095,
+  },
+  high: {
+    count: 1800,
+    pixelRatio: 1.75,
+    antialias: false,
+    wireDetail: 2,
+    wireOpacity: 0.12,
+    size: 0.085,
+  },
 };
 
 /**
@@ -194,7 +214,7 @@ export function ParticleField() {
     <div
       ref={holder}
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 opacity-70 [mask-image:radial-gradient(80%_70%_at_50%_35%,#000_55%,transparent_100%)]"
+      className="pointer-events-none fixed inset-0 z-0 [mask-image:radial-gradient(80%_70%_at_50%_35%,#000_55%,transparent_100%)] opacity-70"
     />
   );
 }

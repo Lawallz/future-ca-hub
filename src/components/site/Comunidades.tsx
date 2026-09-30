@@ -1,93 +1,95 @@
-import { useReveal } from "@/lib/gsap-reveal";
-
-const canais = [
+import {
+  ArrowUpRight,
+  HeartHandshake,
+  Instagram,
+  MessageCircle,
+  MessagesSquare,
+} from "lucide-react";
+import { siteLinks } from "@/data/site";
+const channels = [
   {
-    titulo: "WhatsApp oficial do CA",
-    desc: "Avisos, eventos e suporte direto com a gestão do Centro Acadêmico.",
-    tag: "Comunidade",
-    href: "https://wa.me/5511989255690",
+    title: "Fale com o CA",
+    description: "Uma dúvida, uma ideia ou algo que precisa mudar? A conversa começa aqui.",
+    tag: "ATENDIMENTO",
+    href: siteLinks.contact,
+    icon: HeartHandshake,
+    color: "lime",
+    action: "Chamar no WhatsApp",
   },
   {
-    titulo: "Instagram @caat.ifspo",
-    desc: "Cobertura de eventos, editais, calendário acadêmico e memes do curso.",
-    tag: "Instagram",
-    href: "https://www.instagram.com/caat.ifspo/",
+    title: "Acompanhe de perto",
+    description: "Eventos, avisos e a vida no campus pelo olhar de quem também está aqui.",
+    tag: "@CAAT.IFSPO",
+    href: siteLinks.instagram,
+    icon: Instagram,
+    color: "violet",
+    action: "Abrir Instagram",
   },
   {
-    titulo: "Renegados De ADS",
-    desc: "Grupo de acolhimento para quem está começando o 1º período de ADS.",
-    tag: "WhatsApp",
-    href: "https://chat.whatsapp.com/IZHNKdFfjiE3OaIiV5mzT4?s=cl&p=a&mlu=1",
+    title: "Encontre sua turma",
+    description:
+      "Renegados de ADS: um espaço para trocar experiências e se conectar com outros estudantes.",
+    tag: "COMUNIDADE",
+    href: siteLinks.community,
+    icon: MessagesSquare,
+    color: "blue",
+    action: "Conhecer o grupo",
   },
 ];
-
-const grupos = [
-  "Algoritmos e Lógica",
-  "Estrutura de Dados",
-  "Banco de Dados I e II",
-  "Engenharia de Software 1",
-  "Engenharia de Software 2",
-  "Desenvolvimento Web",
-  "Redes de Computadores",
-  "Dispositivos Móveis",
-  "TCC e Orientações",
-];
-
 export function Comunidades() {
-  const ref = useReveal<HTMLDivElement>();
-
   return (
-    <section id="comunidades" className="relative px-5 py-24">
-      <div ref={ref} className="mx-auto max-w-6xl">
-        <header className="max-w-2xl">
-          <p data-reveal className="text-[12px] tracking-[0.2em] text-neon-soft uppercase">
-            Central de links
-          </p>
-          <h2 data-reveal className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
-            Comunidades e redes do CA
-          </h2>
+    <section id="comunidades" className="portal-section">
+      <div className="site-container">
+        <header className="section-heading">
+          <div>
+            <p className="eyebrow">03 / NINGUÉM SE FORMA SOZINHO</p>
+            <h2>
+              O curso fica melhor
+              <br />
+              com a gente junto.
+            </h2>
+            <p>Troque conhecimento, participe das conversas e faça parte do Centro Acadêmico.</p>
+          </div>
         </header>
-
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {canais.map((c) => (
+        <div className="community-grid">
+          {channels.map(({ title, description, tag, href, icon: Icon, color, action }) => (
             <a
-              key={c.titulo}
-              data-reveal
-              href={c.href}
+              key={title}
+              href={href}
               target="_blank"
-              rel="noreferrer noopener"
-              className="glass lift group rounded-3xl p-6"
+              rel="noopener noreferrer"
+              className="community-card"
             >
-              <span className="rounded-full border border-border px-3 py-1 text-[11px] text-muted-foreground">
-                {c.tag}
-              </span>
-              <h3 className="mt-5 text-lg font-semibold text-foreground">{c.titulo}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{c.desc}</p>
-              <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-neon-soft">
-                Entrar
-                <span className="transition-transform duration-500 ease-[var(--ease-fluid)] group-hover:translate-x-1">
-                  →
+              <div className="community-card-top">
+                <span className={`shortcut-icon ${color}`}>
+                  <Icon size={24} />
                 </span>
+                <ArrowUpRight size={20} />
+              </div>
+              <span className="eyebrow">{tag}</span>
+              <h3>{title}</h3>
+              <p>{description}</p>
+              <span className="community-action">
+                {action} <ArrowUpRight size={16} />
               </span>
+              <span className="sr-only">(abre em nova aba)</span>
             </a>
           ))}
         </div>
-
-        <div data-reveal className="glass mt-6 rounded-3xl p-6">
-          <h3 className="text-sm font-semibold text-foreground">Grupos por matéria</h3>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {grupos.map((g) => (
-              <a
-                key={g}
-                href="https://chat.whatsapp.com/"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="rounded-full border border-border bg-secondary/40 px-4 py-2 text-[13px] text-muted-foreground transition-all duration-400 ease-[var(--ease-fluid)] hover:-translate-y-0.5 hover:border-neon hover:text-foreground"
-              >
-                {g}
-              </a>
-            ))}
+        <div className="contribution-banner">
+          <MessageCircle size={30} />
+          <div>
+            <h3>Procurando um grupo de uma disciplina?</h3>
+            <p>Peça o convite ao CA. Os links específicos ainda não foram cadastrados.</p>
           </div>
+          <a
+            className="button button-outline"
+            href={siteLinks.contact}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Pedir um convite <ArrowUpRight size={16} />
+          </a>
         </div>
       </div>
     </section>

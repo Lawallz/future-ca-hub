@@ -179,7 +179,6 @@ export function IntroScreen({ onDone }: { onDone: () => void }) {
         e.preventDefault();
         first.focus();
       }
-
     };
 
     // Keep focus inside the splash even if something else steals it.
@@ -243,24 +242,24 @@ export function IntroScreen({ onDone }: { onDone: () => void }) {
       <div className="veil pointer-events-none absolute inset-x-0 top-0 h-1/2" aria-hidden="true" />
       <div data-intro-inner className="relative flex w-[min(90vw,420px)] flex-col items-center">
         <div data-intro-logo className="flex items-center gap-3">
-          <span className="relative grid h-14 w-14 place-items-center rounded-2xl border border-neon/40 bg-neon/10">
-            <span className="font-display text-lg font-bold neon-text">CA</span>
+          <span className="border-neon/40 bg-neon/10 relative grid h-14 w-14 place-items-center rounded-2xl border">
+            <span className="font-display neon-text text-lg font-bold">CA</span>
             <span className="absolute inset-0 rounded-2xl shadow-[var(--shadow-neon)]" />
           </span>
-          <span className="font-display text-3xl font-bold tracking-tight text-foreground">
+          <span className="font-display text-foreground text-3xl font-bold tracking-tight">
             ADS<span className="neon-text">.</span>
           </span>
         </div>
 
         <p
           data-intro-label
-          className="mt-6 text-[11px] tracking-[0.35em] text-muted-foreground uppercase"
+          className="text-muted-foreground mt-6 text-[11px] tracking-[0.35em] uppercase"
         >
           IFSP — Campus São Paulo
         </p>
 
         <div
-          className="mt-8 h-px w-full overflow-hidden bg-border"
+          className="bg-border mt-8 h-px w-full overflow-hidden"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
@@ -269,15 +268,15 @@ export function IntroScreen({ onDone }: { onDone: () => void }) {
         >
           <div
             data-intro-bar
-            className="h-px w-full origin-left scale-x-0 bg-neon shadow-[var(--shadow-neon)]"
+            className="bg-neon h-px w-full origin-left scale-x-0 shadow-[var(--shadow-neon)]"
           />
         </div>
 
-        <div className="mt-3 flex w-full items-center justify-between text-[11px] text-muted-foreground">
+        <div className="text-muted-foreground mt-3 flex w-full items-center justify-between text-[11px]">
           <span aria-live="polite" aria-atomic="true">
             Carregando {progress}%
           </span>
-          <span className="font-display tabular-nums text-foreground" aria-hidden="true">
+          <span className="font-display text-foreground tabular-nums" aria-hidden="true">
             {String(progress).padStart(3, "0")}%
           </span>
         </div>
@@ -286,7 +285,7 @@ export function IntroScreen({ onDone }: { onDone: () => void }) {
           ref={skipRef}
           type="button"
           onClick={finish}
-          className="mt-8 rounded-full border border-border px-4 py-2 text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-neon focus-visible:outline-none"
+          className="border-border text-muted-foreground hover:text-foreground focus-visible:ring-neon mt-8 rounded-full border px-4 py-2 text-[11px] tracking-[0.2em] uppercase transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
           Pular introdução
         </button>

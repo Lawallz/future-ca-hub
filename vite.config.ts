@@ -22,25 +22,37 @@ export default defineConfig({
         registerType: "prompt",
         injectRegister: null,
         filename: "sw.js",
+        outDir: ".output/public",
         devOptions: { enabled: false },
         manifest: {
           name: "CA-ADS IFSP São Paulo",
           short_name: "CA-ADS",
           start_url: "/",
           display: "standalone",
-          background_color: "#0a0a0a",
-          theme_color: "#0a0a0a",
-          icons: [{ src: "/favicon.ico", sizes: "48x48", type: "image/x-icon" }],
+          background_color: "#111715",
+          theme_color: "#111715",
+          icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
         },
         workbox: {
-          globPatterns: ["**/*.{js,css,woff2,svg,ico,png,avif,webp}", "offline.html"],
-          navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
+          globPatterns: ["**/*.{js,css,woff2,svg,ico,jpg,png,avif,webp}", "offline.html"],
+          navigateFallback: null,
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: false,
           runtimeCaching: [
             {
-              urlPattern: ({ request }: { request: Request }) => request.mode === "navigate",
+              urlPattern: ({
+                request,
+                url,
+                sameOrigin,
+              }: {
+                request: Request;
+                url: URL;
+                sameOrigin: boolean;
+              }) =>
+                sameOrigin &&
+                request.mode === "navigate" &&
+                !/^\/(?:~oauth|api)(?:\/|$)/.test(url.pathname),
               handler: "NetworkFirst",
               options: {
                 cacheName: "html-navigations",

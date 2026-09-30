@@ -1,89 +1,128 @@
-import { useReveal } from "@/lib/gsap-reveal";
-
-const tutoriais = [
+import { ArrowUpRight, ChevronDown, GraduationCap } from "lucide-react";
+import { siteLinks } from "@/data/site";
+const guides = [
   {
-    titulo: "Primeiro acesso ao SUAP / Moodle",
-    passos: [
-      "Acesse suap.ifsp.edu.br e clique em “Entrar”.",
-      "Use o mesmo login do SUAP (prontuário sem a letra) e sua senha.",
-      "Localize as suas disciplinas do período em “Locais e Horários de Aula”.",
+    title: "Primeiro acesso ao SUAP e ao Moodle",
+    tag: "COMECE AQUI",
+    steps: [
+      "Abra o SUAP pelo link abaixo. Se ainda não tiver acesso, use as opções de recuperação ou procure o atendimento acadêmico.",
+      "O Moodle tem um acesso próprio. Confira as orientações de autenticação e as disciplinas disponíveis no portal.",
+      "Se uma disciplina não aparecer, confirme com o professor ou com a secretaria antes de criar outro cadastro.",
     ],
+    href: siteLinks.suap,
+    action: "Acessar SUAP",
   },
   {
-    titulo: "Declaração de matrícula no SUAP",
-    passos: [
-      "Entre em suap.ifsp.edu.br com prontuário e senha.",
-      "Vá em Meus Dados → Documentos → Atestado de Matrícula.",
-      "Selecione as opções que deseja e baixe o arquivo.",
+    title: "Preciso de uma declaração de matrícula",
+    tag: "DOCUMENTOS",
+    steps: [
+      "Acesse o SUAP e consulte a área de dados e documentos do estudante.",
+      "Confira se a declaração disponível corresponde ao documento solicitado e se os seus dados estão corretos.",
+      "Se não localizar o documento, peça orientação ao atendimento acadêmico pelo canal indicado no sistema.",
     ],
+    href: siteLinks.suap,
+    action: "Abrir SUAP",
   },
   {
-    titulo: "Wi-Fi e e-mail institucional",
-    passos: [
-      "Conecte na rede IFSP e autentique com as credenciais do SUAP.",
-      "Ative o e-mail @aluno.ifsp.edu.br no primeiro login do Google.",
-      "Com ele você libera Drive, acesso e apps educacionais.",
+    title: "Wi-Fi e e-mail institucional",
+    tag: "CONECTIVIDADE",
+    steps: [
+      "Consulte no SUAP as informações de acesso à sua conta institucional.",
+      "Siga as orientações do campus para a rede Wi-Fi e para a ativação do e-mail.",
+      "Não compartilhe sua senha. Em caso de falha, procure o suporte de TI do campus.",
     ],
+    href: siteLinks.suap,
+    action: "Consultar minha conta",
   },
   {
-    titulo: "Auxílios estudantis e editais",
-    passos: [
-      "SEILANSEICOMOFAZISSO AINDA",
-      "VO VE I TI AVISO.",
-      "EENVIA PELO SUAP",
+    title: "Auxílios estudantis e editais",
+    tag: "PERMANÊNCIA",
+    steps: [
+      "Os critérios, documentos e prazos dependem do edital vigente.",
+      "Peça ao CA o link do edital e o canal de atendimento responsável pela assistência estudantil.",
+      "Leia o documento completo e guarde o comprovante da inscrição. Este portal não recebe inscrições.",
     ],
+    href: siteLinks.contact,
+    action: "Pedir orientação ao CA",
   },
   {
-    titulo: "Trancamento e ajuste de matrícula",
-    passos: [
-      "Confira o calendário acadêmico para os prazos do semestre.",
-      "Solicite pelo SUAP através do Requerimento 'Cancelamento de Disciplina' ou 'Ajuste de Matrícula'.",
-      "Valide o comprovante antes do fim do período de ajuste.",
+    title: "Ajustes de matrícula e trancamento",
+    tag: "VIDA ACADÊMICA",
+    steps: [
+      "Confira os prazos no calendário acadêmico vigente.",
+      "Consulte as orientações e os requerimentos disponíveis no SUAP para a sua situação.",
+      "Antes de concluir a solicitação, confirme as consequências com o atendimento acadêmico e guarde o protocolo.",
     ],
+    href: siteLinks.suap,
+    action: "Consultar SUAP",
   },
   {
-    titulo: "Como contribuir com o banco de provas",
-    passos: [
-      "Digitalize a prova ou o material em PDF legível.",
-      "Nomeie como Disciplina_Ano_Semestre_Professor.",
-      "Envie no WhatsApp do CA para publicarmos no Drive.",
+    title: "Como contribuir com os materiais",
+    tag: "COLABORE",
+    steps: [
+      "Separe um PDF legível e remova dados pessoais que não precisam ser compartilhados.",
+      "Use um nome como Disciplina_Ano_Semestre_Professor para facilitar a organização.",
+      "Envie ao WhatsApp do CA apenas materiais que você tem autorização para compartilhar.",
     ],
+    href: siteLinks.contact,
+    action: "Enviar ao CA",
   },
 ];
-
 export function Tutoriais() {
-  const ref = useReveal<HTMLDivElement>();
-
   return (
-    <section id="tutoriais" className="relative px-5 py-24">
-      <div ref={ref} className="mx-auto max-w-6xl">
-        <header className="max-w-2xl">
-          <p data-reveal className="text-[12px] tracking-[0.2em] text-neon-soft uppercase">
-            Guias rápidos
-          </p>
-          <h2 data-reveal className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
-            Tutoriais e acessos úteis
-          </h2>
-          <p data-reveal className="mt-3 text-muted-foreground">
-            Para calouros e veteranos resolverem o burocrático em minutos.
-          </p>
+    <section id="tutoriais" className="portal-section guides-section">
+      <div className="site-container guides-layout">
+        <header className="section-heading">
+          <div>
+            <span className="shortcut-icon lime">
+              <GraduationCap size={26} />
+            </span>
+            <p className="eyebrow">04 / UM EMPURRÃOZINHO</p>
+            <h2>
+              Calouro ou veterano,
+              <br />
+              pode chegar.
+            </h2>
+            <p>
+              Orientações para as dúvidas que aparecem no caminho. Os procedimentos e prazos devem
+              ser conferidos nos canais do campus.
+            </p>
+            <a
+              className="text-link"
+              href={siteLinks.contact}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Não encontrou sua dúvida? Fale com o CA <ArrowUpRight size={16} />
+            </a>
+          </div>
         </header>
-
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {tutoriais.map((t) => (
-            <article key={t.titulo} data-reveal className="glass lift rounded-3xl p-6">
-              <h3 className="text-base font-semibold text-foreground">{t.titulo}</h3>
-              <ol className="mt-4 space-y-3">
-                {t.passos.map((p, i) => (
-                  <li key={p} className="flex gap-3 text-sm text-muted-foreground">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border text-[11px] text-neon-soft">
-                      {i + 1}
-                    </span>
-                    {p}
-                  </li>
-                ))}
-              </ol>
-            </article>
+        <div className="guide-list">
+          {guides.map((guide, index) => (
+            <details key={guide.title} className="guide">
+              <summary>
+                <span className="guide-number">0{index + 1}</span>
+                <span>{guide.title}</span>
+                <ChevronDown size={19} />
+              </summary>
+              <div className="guide-content">
+                <p className="eyebrow">{guide.tag}</p>
+                <ol>
+                  {guide.steps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+                <a
+                  className="text-link"
+                  href={guide.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {guide.action} <ArrowUpRight size={16} />
+                  <span className="sr-only">(nova aba)</span>
+                </a>
+              </div>
+            </details>
           ))}
         </div>
       </div>
