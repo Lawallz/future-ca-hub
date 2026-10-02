@@ -28,9 +28,9 @@ const tutoriais = [
   {
     titulo: "Auxílios estudantis e editais",
     passos: [
-      "SEILANSEICOMOFAZISSO AINDA",
-      "VO VE I TI AVISO.",
-      "EENVIA PELO SUAP",
+      "Acompanhe a publicação dos editais de assistência estudantil no site ou mural do campus.",
+      "Preencha os anexos solicitados e separe a documentação socioeconômica necessária.",
+      "Submeta a inscrição e os comprovantes dentro do prazo estipulado através do SUAP.",
     ],
   },
   {
@@ -47,6 +47,54 @@ const tutoriais = [
       "Digitalize a prova ou o material em PDF legível.",
       "Nomeie como Disciplina_Ano_Semestre_Professor.",
       "Envie no WhatsApp do CA para publicarmos no Drive.",
+    ],
+  },
+  {
+    titulo: "Solicitação de Carteirinha Estudantil (Passe Escolar)",
+    passos: [
+      "Acesse o SUAP e baixe a sua Declaração de Matrícula atualizada.",
+      "Entre no site da SPTrans (municipal) ou EMTU (intermunicipal) e solicite o cadastro de estudante.",
+      "Após a aprovação, siga as instruções para validar o benefício nos postos credenciados ou totens.",
+    ],
+  },
+  {
+    titulo: "Emissão de Histórico Escolar e Declarações",
+    passos: [
+      "Entre no SUAP com seu prontuário e senha.",
+      "Navegue até Ensino → Alunos → Documentos do Aluno.",
+      "Escolha o documento desejado (Histórico ou Declaração de Vínculo) e baixe o PDF autenticado.",
+    ],
+  },
+  {
+    titulo: "Justificativa de Falta (Atestado Médico)",
+    passos: [
+      "Confira o prazo limite no regulamento (geralmente até 3 dias úteis após o retorno).",
+      "Abra um Requerimento Eletrônico no SUAP selecionando a categoria de justificativa de faltas.",
+      "Anexe o atestado médico digitalizado em PDF de forma legível e envie para a Secretaria.",
+    ],
+  },
+  {
+    titulo: "Empréstimo de Livros e Reserva na Biblioteca",
+    passos: [
+      "Acesse o sistema da biblioteca do IFSP utilizando suas credenciais institucionais.",
+      "Consulte o acervo físico ou digital e utilize a opção de Reserva se necessário.",
+      "Vá até o balcão da biblioteca para retirar o livro utilizando o prontuário ou carteirinha.",
+    ],
+  },
+  {
+    titulo: "Pacote Office e GitHub Student Developer Pack",
+    passos: [
+      "Utilize seu e-mail institucional (@aluno.ifsp.edu.br) para liberar o Microsoft Office 365 gratuito.",
+      "Cadastre-se no GitHub Student Developer Pack usando o mesmo e-mail acadêmico.",
+      "Aproveite ferramentas de desenvolvimento e licenças de software profissionais sem custo.",
+    ],
+  },
+  {
+    titulo: "Participação em Projetos de Extensão e Iniciação Científica",
+    passos: [
+      "Fique atento aos editais publicados na página oficial do campus e no SUAP ao longo do ano.",
+      "Converse com os professores da sua área de interesse para alinhar propostas de planos de trabalho.",
+      "Submeta a inscrição dentro do prazo exigido pelo edital vigente.",
     ],
   },
 ];

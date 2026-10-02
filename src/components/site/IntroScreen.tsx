@@ -238,7 +238,7 @@ export function IntroScreen({ onDone }: { onDone: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-label="Carregando o site do CA-ADS"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0a0a]"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0b0714]"
     >
       <div className="veil pointer-events-none absolute inset-x-0 top-0 h-1/2" aria-hidden="true" />
       <div data-intro-inner className="relative flex w-[min(90vw,420px)] flex-col items-center">

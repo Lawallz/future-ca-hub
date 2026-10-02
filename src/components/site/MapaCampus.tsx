@@ -7,6 +7,7 @@ type Sala = {
   tipo: string;
   numero?: string;
   cor?: string;
+  andar?: 1 | 2;
 };
 
 type Bloco = {
@@ -43,14 +44,14 @@ type SecaoPlanta = {
 };
 
 const C_LARANJA = "#f97316";
-const C_AZUL = "#3b82f6";
+const C_AZUL = "#7c3aed";
 const C_ROSA = "#f43f5e";
-const C_CEU = "#38bdf8";
+const C_CEU = "#e879f9";
 const C_VERDE = "#22c55e";
 const C_AMBAR = "#eab308";
 const C_TEAL = "#14b8a6";
 const C_VIOLETA = "#a78bfa";
-const C_ROXO = "#8b5cf6";
+const C_ROXO = "#c026d3";
 const C_CINZA = "#52525b";
 const C_SLATE = "#64748b";
 
@@ -456,6 +457,258 @@ function PlantaBlocoA({
 }
 
 /* ------------------------------------------------------------------ */
+/* BLOCO C — 2 ANDARES                                                 */
+/* 2º andar vetorizado a partir do desenho à mão (planta em "U" com    */
+/* duas alas, corredor em U, escadas de entrada, saídas e saguão).     */
+/* Os nomes/números das salas são provisórios (exceto a sala 213):     */
+/* edite o campo `nome` de cada sala em `zonasBlocoC2` quando tiver    */
+/* a identificação real.                                               */
+/* ------------------------------------------------------------------ */
+
+type ZonaPlanta = {
+  celula: CelulaPlanta;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  escada?: { seta?: "↑" | "↓" };
+};
+
+function colunaSalas(
+  idPrefixo: string,
+  nomeBase: string,
+  x: number,
+  y0: number,
+  w: number,
+  h: number,
+  n: number
+): ZonaPlanta[] {
+  return Array.from({ length: n }, (_, k) => ({
+    celula: cel(`${idPrefixo}-${k + 1}`, `${nomeBase} ${k + 1}`, "Sala", C_CINZA),
+    x,
+    y: y0 + k * h,
+    w,
+    h,
+  }));
+}
+
+function linhaSalas(
+  idPrefixo: string,
+  nomeBase: string,
+  x0: number,
+  y: number,
+  w: number,
+  h: number,
+  n: number
+): ZonaPlanta[] {
+  return Array.from({ length: n }, (_, k) => ({
+    celula: cel(`${idPrefixo}-${k + 1}`, `${nomeBase} ${k + 1}`, "Sala", C_CINZA),
+    x: x0 + k * w,
+    y,
+    w,
+    h,
+  }));
+}
+
+const zonasBlocoC2: ZonaPlanta[] = [
+  // Ala esquerda (externa e interna)
+  ...colunaSalas("c2-ee", "Ala esquerda externa", 20, 195, 93, 61, 5),
+  ...colunaSalas("c2-ei", "Ala esquerda interna", 155, 110, 108, 55, 5),
+  // Ala direita (interna e externa — a última sala da externa é a 213)
+  ...colunaSalas("c2-di", "Ala direita interna", 377, 110, 108, 55, 5),
+  ...colunaSalas("c2-de", "Ala direita externa", 527, 195, 93, 61, 5).map((z, i, arr) =>
+    i === arr.length - 1 ? { ...z, celula: cel("c2-213", "Sala 213", "Sala", C_CINZA, "213") } : z
+  ),
+  // Salas frontais, voltadas para o saguão
+  ...linhaSalas("c2-f", "Sala frontal", 205, 425, 57.5, 75, 4),
+  // Saídas (topo)
+  { celula: cel("c2-saida-e", "Saída esquerda", "Saída", C_VERDE), x: 78, y: 40, w: 127, h: 70 },
+  { celula: cel("c2-saida-d", "Saída direita", "Saída", C_VERDE), x: 435, y: 40, w: 127, h: 70 },
+  // Escadas das saídas (topo)
+  { celula: cel("c2-esc-saida-e", "Escada da saída esquerda", "Circulação", C_AMBAR), x: 78, y: 110, w: 35, h: 70, escada: {} },
+  { celula: cel("c2-esc-saida-d", "Escada da saída direita", "Circulação", C_AMBAR), x: 527, y: 110, w: 35, h: 70, escada: {} },
+  // Escadas de entrada (base)
+  { celula: cel("c2-esc-e-sobe", "Escada de entrada esquerda — subida", "Circulação", C_AMBAR), x: 113, y: 425, w: 46, h: 75, escada: { seta: "↑" } },
+  { celula: cel("c2-esc-e-desce", "Escada de entrada esquerda — descida", "Circulação", C_AMBAR), x: 159, y: 425, w: 46, h: 75, escada: { seta: "↓" } },
+  { celula: cel("c2-esc-d-desce", "Escada de entrada direita — descida", "Circulação", C_AMBAR), x: 435, y: 425, w: 46, h: 75, escada: { seta: "↓" } },
+  { celula: cel("c2-esc-d-sobe", "Escada de entrada direita — subida", "Circulação", C_AMBAR), x: 481, y: 425, w: 46, h: 75, escada: { seta: "↑" } },
+  // Saguão
+  { celula: cel("c2-saguao", "Saguão", "Área comum", C_TEAL), x: 205, y: 514, w: 230, h: 40 },
+];
+
+const salasBlocoC2: Sala[] = zonasBlocoC2.map(({ celula }) => ({
+  id: celula.id,
+  nome: celula.nome,
+  tipo: celula.tipo,
+  cor: celula.cor,
+  numero: celula.numero,
+  andar: 2,
+}));
+
+const LEGENDA_BLOCO_C2: { tipo: string; cor: string }[] = [
+  { tipo: "Salas", cor: C_CINZA },
+  { tipo: "Escadas", cor: C_AMBAR },
+  { tipo: "Saídas", cor: C_VERDE },
+  { tipo: "Saguão", cor: C_TEAL },
+];
+
+function EscadaSVG({
+  zona,
+  ativa,
+  onClick,
+}: {
+  zona: ZonaPlanta;
+  ativa: boolean;
+  onClick: () => void;
+}) {
+  const { celula, x, y, w, h, escada } = zona;
+  const degraus = Math.floor(h / 8);
+  return (
+    <g onClick={onClick} className="cursor-pointer group">
+      <title>{celula.nome}</title>
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        rx="4"
+        fill={ativa ? "#1c1c22" : "#18181b"}
+        stroke={ativa ? celula.cor : "#3f3f46"}
+        strokeWidth={ativa ? 1.75 : 1}
+        className="transition-all duration-300 group-hover:fill-neon/10 group-hover:stroke-neon"
+      />
+      {Array.from({ length: degraus - 1 }, (_, i) => (
+        <line
+          key={i}
+          x1={x + 4}
+          x2={x + w - 4}
+          y1={y + (i + 1) * 8}
+          y2={y + (i + 1) * 8}
+          stroke={celula.cor}
+          strokeWidth="1"
+          opacity={ativa ? 0.9 : 0.45}
+          className="pointer-events-none"
+        />
+      ))}
+      {escada?.seta && (
+        <text
+          x={x + w / 2}
+          y={y + 14}
+          fontSize="13"
+          fontWeight="bold"
+          textAnchor="middle"
+          fill="#e4e4e7"
+          className="pointer-events-none select-none"
+        >
+          {escada.seta}
+        </text>
+      )}
+    </g>
+  );
+}
+
+function PlantaBlocoC2({
+  salaAtivaId,
+  onSelecionar,
+}: {
+  salaAtivaId?: string;
+  onSelecionar: (id: string) => void;
+}) {
+  return (
+    <div className="flex w-full flex-col items-center gap-4">
+      <svg
+        viewBox="0 0 640 580"
+        className="h-full max-h-[600px] w-full drop-shadow-lg rounded-2xl"
+        xmlns="http://www.w3.org/2000/svg"
+        fontFamily="Arial, Helvetica, sans-serif"
+      >
+        <rect width="640" height="580" fill="#09090b" rx="16" />
+        <text x="620" y="26" fontSize="10" fontWeight="bold" textAnchor="end" fill="#71717a" letterSpacing="1">
+          2º ANDAR
+        </text>
+
+        {/* Corredor em U */}
+        <path
+          d="M113,110 L155,110 L155,385 L485,385 L485,110 L527,110 L527,425 L113,425 Z"
+          fill="#101013"
+          stroke="#27272a"
+          strokeDasharray="4 4"
+        />
+
+        {zonasBlocoC2.map((zona) =>
+          zona.escada ? (
+            <EscadaSVG
+              key={zona.celula.id}
+              zona={zona}
+              ativa={salaAtivaId === zona.celula.id}
+              onClick={() => onSelecionar(zona.celula.id)}
+            />
+          ) : (
+            <CelulaSVG
+              key={zona.celula.id}
+              x={zona.x}
+              y={zona.y}
+              width={zona.w}
+              height={zona.h}
+              celula={zona.celula}
+              ativa={salaAtivaId === zona.celula.id}
+              onClick={() => onSelecionar(zona.celula.id)}
+            />
+          )
+        )}
+
+        {/* Rótulos de entrada */}
+        <text x="159" y="516" fontSize="8.5" fontWeight="bold" textAnchor="middle" fill="#71717a" letterSpacing="1">
+          ENTRADA
+        </text>
+        <text x="481" y="516" fontSize="8.5" fontWeight="bold" textAnchor="middle" fill="#71717a" letterSpacing="1">
+          ENTRADA
+        </text>
+
+        <line x1="20" y1="568" x2="620" y2="568" stroke="#27272a" strokeDasharray="4 4" />
+      </svg>
+
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-2 text-[10px] text-muted-foreground">
+        {LEGENDA_BLOCO_C2.map((item) => (
+          <span key={item.tipo} className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.cor }} />
+            {item.tipo}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SeletorAndar({
+  andar,
+  onChange,
+}: {
+  andar: 1 | 2;
+  onChange: (a: 1 | 2) => void;
+}) {
+  return (
+    <div className="mb-4 inline-flex gap-2" role="group" aria-label="Selecionar andar">
+      {([1, 2] as const).map((a) => (
+        <button
+          key={a}
+          type="button"
+          aria-pressed={andar === a}
+          onClick={() => onChange(a)}
+          className={`rounded-full border px-4 py-1.5 text-[12px] font-medium transition-all duration-300 cursor-pointer ${
+            andar === a
+              ? "border-neon bg-neon/10 text-neon"
+              : "border-border text-muted-foreground hover:border-neon/60 hover:text-foreground"
+          }`}
+        >
+          {a}º andar
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* MAPA GERAL DO CAMPUS (A a H)                                        */
 /* Vetorizado a partir do quadro real "Escola Técnica Federal de São   */
 /* Paulo": blocos F/G/H, corredor amarelo do Bloco A, blocos E/D/C/B,  */
@@ -463,10 +716,10 @@ function PlantaBlocoA({
 /* ------------------------------------------------------------------ */
 
 const CORES_BLOCOS: Record<string, string> = {
-  F: "#3b82f6",
+  F: "#7c3aed",
   G: "#71717a",
   H: "#be123c",
-  E: "#3b82f6",
+  E: "#7c3aed",
   D: "#15803d",
   C: "#f97316",
   B: "#c026d3",
@@ -526,12 +779,19 @@ export function MapaCampus() {
   const ref = useReveal<HTMLDivElement>();
   const [blocoSelecionado, setBlocoSelecionado] = useState<Bloco | null>(null);
   const [salaAtiva, setSalaAtiva] = useState<Sala | null>(null);
+  const [andarAtivo, setAndarAtivo] = useState<1 | 2>(1);
+
+  // Salas exibidas: blocos sem andar definido mostram tudo; o Bloco C filtra pelo andar.
+  const salasVisiveis = blocoSelecionado
+    ? blocoSelecionado.salas.filter((s) => s.andar === undefined || s.andar === andarAtivo)
+    : [];
 
   const handleBlocoClick = (sigla: string) => {
     const blocoEncontrado = blocosCampus.find((b) => b.id === `bloco-${sigla.toLowerCase()}`);
     if (blocoEncontrado) {
       setBlocoSelecionado(blocoEncontrado);
       setSalaAtiva(null);
+      setAndarAtivo(1);
     }
   };
 
@@ -558,6 +818,7 @@ export function MapaCampus() {
               onClick={() => {
                 setBlocoSelecionado(null);
                 setSalaAtiva(null);
+                setAndarAtivo(1);
               }}
               className="glass inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-medium text-neon transition-all hover:bg-neon/10 cursor-pointer"
             >
@@ -571,7 +832,9 @@ export function MapaCampus() {
           <div
             data-reveal
             className={`glass grid-lines relative overflow-hidden rounded-3xl p-4 flex items-center justify-center bg-background/60 border border-border/80 ${
-              blocoSelecionado?.id === "bloco-a" ? "min-h-[620px]" : "min-h-[500px]"
+              blocoSelecionado?.id === "bloco-a" || (blocoSelecionado?.id === "bloco-c" && andarAtivo === 2)
+                ? "min-h-[620px]"
+                : "min-h-[500px]"
             }`}
           >
             {!blocoSelecionado ? (
@@ -683,6 +946,16 @@ export function MapaCampus() {
                   </p>
                 </div>
 
+                {blocoSelecionado.id === "bloco-c" && (
+                  <SeletorAndar
+                    andar={andarAtivo}
+                    onChange={(a) => {
+                      setAndarAtivo(a);
+                      setSalaAtiva(null);
+                    }}
+                  />
+                )}
+
                 {blocoSelecionado.id === "bloco-a" ? (
                   <PlantaBlocoA
                     salaAtivaId={salaAtiva?.id}
@@ -691,23 +964,38 @@ export function MapaCampus() {
                       if (sala) setSalaAtiva(sala);
                     }}
                   />
+                ) : blocoSelecionado.id === "bloco-c" && andarAtivo === 2 ? (
+                  <PlantaBlocoC2
+                    salaAtivaId={salaAtiva?.id}
+                    onSelecionar={(id) => {
+                      const sala = blocoSelecionado.salas.find((s) => s.id === id);
+                      if (sala) setSalaAtiva(sala);
+                    }}
+                  />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                    {blocoSelecionado.salas.map((sala) => (
-                      <div
-                        key={sala.id}
-                        onClick={() => setSalaAtiva(sala)}
-                        className={`cursor-pointer rounded-2xl border p-4 transition-all duration-300 ${
-                          salaAtiva?.id === sala.id
-                            ? "border-neon bg-neon/10 text-foreground shadow-sm"
-                            : "border-border/80 bg-secondary/40 text-muted-foreground hover:border-neon/50 hover:text-foreground"
-                        }`}
-                      >
-                        <h5 className="text-sm font-bold text-foreground">{sala.nome}</h5>
-                        <p className="text-xs mt-0.5 opacity-80">{sala.tipo}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    {blocoSelecionado.id === "bloco-c" && (
+                      <p className="mb-3 rounded-2xl border border-dashed border-border/80 px-4 py-3 text-xs text-muted-foreground">
+                        A planta do 1º andar ainda não foi adicionada. Por enquanto, estes são os ambientes cadastrados.
+                      </p>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                      {salasVisiveis.map((sala) => (
+                        <div
+                          key={sala.id}
+                          onClick={() => setSalaAtiva(sala)}
+                          className={`cursor-pointer rounded-2xl border p-4 transition-all duration-300 ${
+                            salaAtiva?.id === sala.id
+                              ? "border-neon bg-neon/10 text-foreground shadow-sm"
+                              : "border-border/80 bg-secondary/40 text-muted-foreground hover:border-neon/50 hover:text-foreground"
+                          }`}
+                        >
+                          <h5 className="text-sm font-bold text-foreground">{sala.nome}</h5>
+                          <p className="text-xs mt-0.5 opacity-80">{sala.tipo}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -724,7 +1012,7 @@ export function MapaCampus() {
               <p className="mt-2 text-sm text-muted-foreground">
                 {blocoSelecionado
                   ? (salaAtiva
-                      ? `${salaAtiva.tipo} · Localizado no ${blocoSelecionado.nome}.`
+                      ? `${salaAtiva.tipo} · Localizado no ${blocoSelecionado.nome}${salaAtiva.andar ? ` (${salaAtiva.andar}º andar)` : ""}.`
                       : blocoSelecionado.descricao)
                   : "Passe o mouse ou clique em qualquer bloco no mapa para visualizar os departamentos."}
               </p>
@@ -740,7 +1028,10 @@ export function MapaCampus() {
                       <li key={bloco.id}>
                         <button
                           type="button"
-                          onClick={() => setBlocoSelecionado(bloco)}
+                          onClick={() => {
+                            setBlocoSelecionado(bloco);
+                            setAndarAtivo(1);
+                          }}
                           className="w-full rounded-xl border border-border px-3.5 py-2 text-left text-[13px] text-muted-foreground transition-all duration-300 hover:border-neon/60 hover:text-foreground hover:bg-secondary/40 flex items-center justify-between cursor-pointer"
                         >
                           <span className="font-medium text-foreground">{bloco.sigla}</span>
@@ -750,7 +1041,7 @@ export function MapaCampus() {
                         </button>
                       </li>
                     ))
-                  : blocoSelecionado.salas.map((sala) => (
+                  : salasVisiveis.map((sala) => (
                       <li key={sala.id}>
                         <button
                           type="button"
@@ -801,10 +1092,11 @@ const blocosCampus: Bloco[] = [
     id: "bloco-c",
     sigla: "Bloco C",
     nome: "Bloco C - Eletrônica e Sistemas",
-    descricao: "Laboratórios de eletrônica, microcontroladores e sistemas de computação (salas 500 a 534).",
+    descricao: "Laboratórios de eletrônica, microcontroladores e sistemas de computação (salas 500 a 534). Possui 2 andares.",
     salas: [
-      { id: "c1", nome: "Lab de Eletrônica Digital", tipo: "Prática" },
-      { id: "c2", nome: "Lab de Sistemas Embarcados", tipo: "Tecnologia" },
+      { id: "c1", nome: "Lab de Eletrônica Digital", tipo: "Prática", andar: 1 },
+      { id: "c2", nome: "Lab de Sistemas Embarcados", tipo: "Tecnologia", andar: 1 },
+      ...salasBlocoC2,
     ],
   },
   {

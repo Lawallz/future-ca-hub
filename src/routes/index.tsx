@@ -2,7 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Header } from "@/components/site/Header";
+import { Produtos } from "@/components/site/Produtos";
+import { Roadmap } from "@/components/site/Roadmap";
 import { Hero } from "@/components/site/Hero";
+import { Horarios } from "@/components/site/Horarios";
 import { BancoDeProvas } from "@/components/site/BancoDeProvas";
 import { Footer } from "@/components/site/Footer";
 import { IntroScreen } from "@/components/site/IntroScreen";
@@ -14,9 +17,7 @@ import { initSectionPrefetch } from "@/lib/prefetch";
 import { onServiceWorkerUpdate } from "@/lib/sw-update";
 
 // Each heavy section ships in its own chunk, fetched when it nears the viewport.
-const Horarios = lazy(() =>
-  import("@/components/site/Horarios").then((m) => ({ default: m.Horarios })),
-);
+
 const Comunidades = lazy(() =>
   import("@/components/site/Comunidades").then((m) => ({ default: m.Comunidades })),
 );
@@ -90,7 +91,7 @@ function Index() {
   }, [revealed, reduced]);
 
   return (
-    <div className="relative min-h-screen bg-surface-deep text-foreground">
+    <div className="bg-surface-deep text-foreground relative min-h-screen">
       {showBackground && (
         <Suspense fallback={null}>
           <ParticleField />
@@ -107,10 +108,10 @@ function Index() {
             <BancoDeProvas />
           </div>
           <div data-cascade>
-            <LazySection label="grade de horários">
-              <Horarios />
-            </LazySection>
+            <Horarios />
           </div>
+          <Roadmap />
+          <Produtos />
           <div data-cascade>
             <LazySection label="comunidades">
               <Comunidades />

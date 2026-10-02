@@ -28,8 +28,8 @@ export default defineConfig({
           short_name: "CA-ADS",
           start_url: "/",
           display: "standalone",
-          background_color: "#0a0a0a",
-          theme_color: "#0a0a0a",
+          background_color: "#0b0714",
+          theme_color: "#7c3aed",
           icons: [{ src: "/favicon.ico", sizes: "48x48", type: "image/x-icon" }],
         },
         workbox: {
