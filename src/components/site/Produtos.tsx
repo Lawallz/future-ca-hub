@@ -1,10 +1,16 @@
 import { useState } from "react";
-import { ShoppingBag, ArrowUpRight } from "lucide-react";
-import { products, productInquiry, salesContact, type Product } from "@/data/products";
+import { ShoppingBag, ArrowUpRight, FileText } from "lucide-react";
+import { products, salesContact, type Product } from "@/data/products";
+
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+// Substitua pelo link de resposta do seu formulário (trocando /edit por /viewform no final)
+const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/10nVw3qW27-E5ZFs8bDixCGshMgNFJa2S8WEvq911D3Q/viewform";
+
 function ProductCard({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1);
   const [option, setOption] = useState(product.options?.[0] ?? "");
+
   return (
     <article className="glass flex flex-col rounded-3xl p-6">
       {product.image ? (
@@ -57,13 +63,13 @@ function ProductCard({ product }: { product: Product }) {
             </label>
           </div>
           <a
-            href={productInquiry(product, quantity, option)}
+            href={GOOGLE_FORM_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="border-neon bg-neon/10 text-neon-soft hover:bg-neon/20 mt-5 flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold"
           >
-            Consultar pedido <ArrowUpRight size={16} />
-            <span className="sr-only">no WhatsApp, nova aba</span>
+            Fazer pedido / Formulário <ArrowUpRight size={16} />
+            <span className="sr-only">no Google Forms, nova aba</span>
           </a>
         </>
       ) : (
@@ -74,6 +80,7 @@ function ProductCard({ product }: { product: Product }) {
     </article>
   );
 }
+
 export function Produtos() {
   return (
     <section id="produtos" className="relative scroll-mt-20 px-5 py-24">
@@ -84,9 +91,10 @@ export function Produtos() {
             Leve o CA com você
           </h2>
           <p className="text-muted-foreground mt-3">
-            Confira os produtos da comunidade e converse com o CA para combinar seu pedido.
+            Confira os produtos da comunidade e preencha o formulário para garantir o seu.
           </p>
         </header>
+
         {products.length ? (
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product) => (
@@ -99,22 +107,22 @@ export function Produtos() {
             <h3 className="text-foreground mt-5 text-xl font-semibold">Catálogo em preparação</h3>
             <p className="text-muted-foreground mt-3 max-w-xl">
               Os produtos, fotos e valores serão publicados aqui assim que estiverem definidos. Quer
-              saber das próximas vendas? Fale com o CA.
+              saber das próximas vendas? Acesse nosso formulário ou fale com o CA.
             </p>
             <a
-              href={`${salesContact}?text=${encodeURIComponent("Olá, CA! Gostaria de saber sobre os produtos e as próximas vendas.")}`}
+              href={GOOGLE_FORM_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="border-border text-foreground hover:border-neon mt-6 inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm"
             >
-              Consultar produtos <ArrowUpRight size={16} />
-              <span className="sr-only">no WhatsApp, nova aba</span>
+              Acessar formulário de pedidos <ArrowUpRight size={16} />
+              <span className="sr-only">no Google Forms, nova aba</span>
             </a>
           </div>
         )}
+
         <p className="text-muted-foreground mt-5 text-xs">
-          O contato abre o WhatsApp. Disponibilidade, pagamento e retirada são confirmados pelo CA;
-          nenhum pedido ou pagamento é concluído neste site.
+          O link direciona para o formulário oficial de encomendas. Disponibilidade, pagamento e retirada são confirmados pelo CA.
         </p>
       </div>
     </section>
