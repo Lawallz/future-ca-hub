@@ -44,14 +44,14 @@ type SecaoPlanta = {
 };
 
 const C_LARANJA = "#f97316";
-const C_AZUL = "#3b82f6";
+const C_AZUL = "#7c3aed";
 const C_ROSA = "#f43f5e";
-const C_CEU = "#38bdf8";
+const C_CEU = "#e879f9";
 const C_VERDE = "#22c55e";
 const C_AMBAR = "#eab308";
 const C_TEAL = "#14b8a6";
 const C_VIOLETA = "#a78bfa";
-const C_ROXO = "#8b5cf6";
+const C_ROXO = "#c026d3";
 const C_CINZA = "#52525b";
 const C_SLATE = "#64748b";
 
@@ -716,10 +716,10 @@ function SeletorAndar({
 /* ------------------------------------------------------------------ */
 
 const CORES_BLOCOS: Record<string, string> = {
-  F: "#3b82f6",
+  F: "#7c3aed",
   G: "#71717a",
   H: "#be123c",
-  E: "#3b82f6",
+  E: "#7c3aed",
   D: "#15803d",
   C: "#f97316",
   B: "#c026d3",
