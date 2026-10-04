@@ -42,4 +42,28 @@ Você precisa ter o **Node.js** e o **npm** instalados na sua máquina ([instale
 1. Clone o repositório:
    ```sh
    git clone https://github.com/Lawallz/future-ca-hub
-   cd future-ca-hub-main
+   cd future-ca-hub
+   npm ci
+   npm run dev
+   ```
+
+2. Abra o endereço informado no terminal pelo Vite.
+
+Use uma versão de Node.js compatível com Vite 8. A aplicação também utiliza TanStack Start e TanStack Router.
+
+## Verificação e manutenção
+
+```bash
+npm run lint
+npm run build
+```
+
+O script `npm run format` formata os arquivos do projeto e pode modificar vários arquivos; revise o diff antes de commitar.
+
+## Produtos e roadmap
+
+As orientações para manter a área de produtos e o roadmap de matérias estão em [docs/produtos-roadmap.md](docs/produtos-roadmap.md). Consulte também os dados em [src/data/](src/data/) ao atualizar as informações do portal.
+
+## Integração com o editor
+
+Este repositório está conectado ao Lovable. Conforme [AGENTS.md](AGENTS.md), preserve o histórico publicado: envie novos commits sem force push ou reescrita de commits já enviados.
