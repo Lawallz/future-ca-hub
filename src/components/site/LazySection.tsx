@@ -52,11 +52,21 @@ export function LazySection({
     <div ref={ref} id={id} className="scroll-mt-20">
       {show ? (
         <Suspense fallback={<SectionSkeleton label={label} />}>
-          {children}
+          <MountedSection id={id}>{children}</MountedSection>
         </Suspense>
       ) : (
         <SectionSkeleton label={label} />
       )}
     </div>
   );
+}
+
+/** Align direct fragment navigation after the requested lazy content commits. */
+function MountedSection({ id, children }: { id: string; children: ReactNode }) {
+  useEffect(() => {
+    if (window.location.hash === `#${id}`) {
+      document.getElementById(id)?.scrollIntoView({ behavior: "instant", block: "start" });
+    }
+  }, [id]);
+  return children;
 }
