@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useReveal } from "@/lib/gsap-reveal";
 
 /* ------------------------------------------------------------------ */
@@ -40,6 +40,8 @@ type CelulaPlanta = {
   numero?: string;
   /** Texto curto desenhado dentro da célula (use "\n" para quebrar linha). */
   rotulo?: string;
+  /** Cor do marcador de EPI desenhado no canto da célula (opcional). */
+  marca?: string;
 };
 
 type LinhaPlanta = {
@@ -75,6 +77,7 @@ type PlantaAndar = {
   rotulos?: { x: number; y: number; texto: string; rot?: number }[];
   zonas: ZonaPlanta[];
   legenda: { tipo: string; cor: string }[];
+  nota?: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -340,9 +343,10 @@ function criarZonas(prefixo: string) {
     y: number,
     w: number,
     h: number,
-    rotulo?: string
+    rotulo?: string,
+    marca?: string
   ): ZonaPlanta => ({
-    celula: cel(idDe(chave), nome, tipo, cor, undefined, rotulo ?? nome),
+    celula: { ...cel(idDe(chave), nome, tipo, cor, undefined, rotulo ?? nome), marca },
     x,
     y,
     w,
@@ -675,12 +679,76 @@ function plantaDMezanino(): PlantaAndar {
   };
 }
 
+/* ---------------------------- BLOCO E ------------------------------ */
+/* Os nomes das áreas sem texto na planta ("Retífica", "Fresadora" e    */
+/* "Centro de Usinagem" são os únicos impressos) são provisórios.       */
+
+const EPI_VERDE = "#22c55e";
+const EPI_VERMELHO = "#ef4444";
+const EPI_AZUL = "#3b82f6";
+
+function plantaEOficina(): PlantaAndar {
+  const { espaco, escada } = criarZonas("e-ofi");
+  const oficina = (
+    chave: string,
+    nome: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    marca?: string,
+    rotulo?: string
+  ) => espaco(chave, nome, "Oficina", C_SLATE, x, y, w, h, rotulo, marca);
+  const usinagem = (chave: string, nome: string, x: number, y: number, w: number, h: number, rotulo?: string) =>
+    espaco(chave, nome, "Usinagem", C_LARANJA, x, y, w, h, rotulo, EPI_VERDE);
+
+  return {
+    titulo: "BLOCO E · OFICINA",
+    viewBox: [680, 510],
+    contorno: { x: 14, y: 38, w: 648, h: 452 },
+    corredores: [
+      { x: 20, y: 205, w: 636, h: 60 },
+      { x: 74, y: 402, w: 456, h: 78 },
+    ],
+    zonas: [
+      // Metade superior
+      oficina("area-esq", "Área de bancadas (esquerda)", 20, 45, 111, 156, EPI_VERMELHO, "Bancadas\n(esquerda)"),
+      oficina("baias-azul", "Baias (zona azul)", 133, 45, 85, 156, EPI_AZUL, "Baias\n(zona azul)"),
+      oficina("baias", "Baias", 219, 45, 48, 156, undefined, "Baias"),
+      oficina("bancada-central", "Bancada central", 269, 45, 120, 156, EPI_VERDE, "Bancada\ncentral"),
+      oficina("bancadas-inclinadas", "Bancadas inclinadas", 392, 45, 141, 156, EPI_VERDE, "Bancadas\ninclinadas"),
+      oficina("area-dir", "Área de bancadas (direita)", 536, 45, 120, 156, EPI_VERDE, "Bancadas\n(direita)"),
+      // Metade inferior — usinagem
+      espaco("sala-lateral", "Sala lateral", "Sala", C_CINZA, 23, 279, 51, 114, "Sala\nlateral"),
+      usinagem("retifica", "Retífica", 74, 279, 99, 123),
+      usinagem("fresadora", "Fresadora", 174, 279, 128, 123),
+      usinagem("centro-usinagem", "Centro de Usinagem", 302, 279, 120, 123, "Centro de\nUsinagem"),
+      espaco("sala-vazia", "Sala (sem equipamentos na planta)", "Sala", C_CINZA, 427, 284, 103, 103, "Sala"),
+      // Escadas
+      escada("esc-te", "Escada superior esquerda", 20, 205, 20, 48),
+      escada("esc-be", "Escada inferior esquerda", 33, 432, 17, 40),
+      escada("esc-bd", "Escada inferior direita", 452, 439, 36, 36),
+    ],
+    legenda: [
+      { tipo: "Oficina / bancadas", cor: C_SLATE },
+      { tipo: "Usinagem", cor: C_LARANJA },
+      { tipo: "Escadas", cor: C_AMBAR },
+      { tipo: "EPI verde (básico)", cor: EPI_VERDE },
+      { tipo: "EPI vermelho / amarelo", cor: EPI_VERMELHO },
+      { tipo: "EPI azul", cor: EPI_AZUL },
+    ],
+    nota:
+      "Os marcadores coloridos indicam o equipamento de proteção exigido na área. Verde: cabelos presos, calça comprida, jaleco, óculos de segurança e sapato fechado. As demais cores aparecem cortadas na foto da legenda.",
+  };
+}
+
 const plantasAndar: Record<string, PlantaAndar> = {
   "bloco-a:subsolo": plantaASubsolo(),
   "bloco-c:terreo": plantaCTerreo(),
   "bloco-c:mezanino": plantaCMezanino(),
   "bloco-d:terreo": plantaDTerreo(),
   "bloco-d:mezanino": plantaDMezanino(),
+  "bloco-e:terreo": plantaEOficina(),
 };
 
 function salasDaPlanta(chave: string, andar: AndarId): Sala[] {
@@ -706,6 +774,8 @@ function CelulaSVG({
   celula,
   ativa,
   onClick,
+  esmaecida = false,
+  escalaFonte = 1,
 }: {
   x: number;
   y: number;
@@ -714,16 +784,30 @@ function CelulaSVG({
   celula: CelulaPlanta;
   ativa: boolean;
   onClick: () => void;
+  esmaecida?: boolean;
+  escalaFonte?: number;
 }) {
-  const fontSize = celula.rotulo ? 9 : celula.tipo === "Ambiente" ? 10 : 8.5;
-  const maxChars = Math.max(10, Math.floor(width / 5.3));
-  const linhasTexto = (celula.rotulo ? celula.rotulo.split("\n") : quebrarTexto(celula.nome, maxChars)).slice(0, 3);
+  // Reduz a fonte aos poucos até o texto caber na altura da célula.
+  let fontSize = (celula.rotulo ? 9 : celula.tipo === "Ambiente" ? 10 : 8.5) * escalaFonte;
+  let linhasTexto = celula.rotulo ? celula.rotulo.split("\n") : [celula.nome];
+  if (!celula.rotulo) {
+    for (let tentativa = 0; tentativa < 6; tentativa++) {
+      linhasTexto = quebrarTexto(celula.nome, Math.max(10, Math.floor(width / (fontSize * 0.62))));
+      if (linhasTexto.length * (fontSize + 2.6) <= height - 4 || fontSize <= 7) break;
+      fontSize -= 0.7;
+    }
+  }
+  linhasTexto = linhasTexto.slice(0, 4);
   const lineHeight = fontSize + 2.6;
   const blocoAltura = (linhasTexto.length - 1) * lineHeight;
   const yTexto = y + height / 2 - blocoAltura / 2 + fontSize / 3;
 
   return (
-    <g onClick={onClick} className="cursor-pointer group">
+    <g
+      onClick={onClick}
+      opacity={esmaecida ? 0.22 : 1}
+      className="cursor-pointer group transition-opacity duration-300"
+    >
       <title>{celula.nome}</title>
       <rect
         x={x}
@@ -737,6 +821,17 @@ function CelulaSVG({
         className="transition-all duration-300 group-hover:fill-neon/10 group-hover:stroke-neon"
       />
       <rect x={x + 1.5} y={y + 3} width="3" height={height - 6} rx="1.5" fill={celula.cor} opacity={ativa ? 1 : 0.7} />
+      {celula.marca && (
+        <circle
+          cx={x + width - 10}
+          cy={y + 10}
+          r="5"
+          fill={celula.marca}
+          stroke="#09090b"
+          strokeWidth="1"
+          className="pointer-events-none"
+        />
+      )}
       {linhasTexto.map((linha, i) => (
         <text
           key={i}
@@ -759,15 +854,17 @@ function EscadaSVG({
   zona,
   ativa,
   onClick,
+  esmaecida = false,
 }: {
   zona: ZonaPlanta;
   ativa: boolean;
   onClick: () => void;
+  esmaecida?: boolean;
 }) {
   const { celula, x, y, w, h, escada } = zona;
   const degraus = Math.floor(h / 8);
   return (
-    <g onClick={onClick} className="cursor-pointer group">
+    <g onClick={onClick} opacity={esmaecida ? 0.22 : 1} className="cursor-pointer group transition-opacity duration-300">
       <title>{celula.nome}</title>
       <rect
         x={x}
@@ -814,17 +911,19 @@ function RotundaSVG({
   zona,
   ativa,
   onClick,
+  esmaecida = false,
 }: {
   zona: ZonaPlanta;
   ativa: boolean;
   onClick: () => void;
+  esmaecida?: boolean;
 }) {
   const { celula, x, y, w } = zona;
   const r = w / 2;
   const cx = x + r;
   const cy = y + r;
   return (
-    <g onClick={onClick} className="cursor-pointer group">
+    <g onClick={onClick} opacity={esmaecida ? 0.22 : 1} className="cursor-pointer group transition-opacity duration-300">
       <title>{celula.nome}</title>
       <circle
         cx={cx}
@@ -891,7 +990,97 @@ function Legenda({ itens }: { itens: { tipo: string; cor: string }[] }) {
   );
 }
 
-/** Renderizador único das plantas de andar (Blocos A-subsolo, C e D). */
+const BOTAO_ZOOM =
+  "h-7 w-7 cursor-pointer rounded-full border border-border bg-background/80 text-[14px] leading-none text-muted-foreground transition-all duration-300 hover:border-neon/60 hover:text-foreground disabled:cursor-default disabled:opacity-40";
+
+/** Aproximar (até 3x) e arrastar para mover. Cliques nos ambientes continuam funcionando. */
+function ZoomPan({ children }: { children: ReactNode }) {
+  const caixa = useRef<HTMLDivElement>(null);
+  const arrasto = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
+  const moveu = useRef(false);
+  const [t, setT] = useState({ k: 1, x: 0, y: 0 });
+
+  const limitar = (x: number, y: number, k: number) => {
+    const w = caixa.current?.clientWidth ?? 0;
+    const h = caixa.current?.clientHeight ?? 0;
+    return {
+      k,
+      x: Math.min(0, Math.max(-(k - 1) * w, x)),
+      y: Math.min(0, Math.max(-(k - 1) * h, y)),
+    };
+  };
+
+  const zoom = (delta: number) =>
+    setT((a) => {
+      const k = Math.min(3, Math.max(1, Math.round((a.k + delta) * 100) / 100));
+      const w = caixa.current?.clientWidth ?? 0;
+      const h = caixa.current?.clientHeight ?? 0;
+      const f = k / a.k;
+      return limitar(w / 2 - (w / 2 - a.x) * f, h / 2 - (h / 2 - a.y) * f, k);
+    });
+
+  return (
+    <div className="relative w-full">
+      <div className="absolute right-2 top-2 z-10 flex gap-1.5">
+        <button type="button" aria-label="Aproximar" disabled={t.k >= 3} onClick={() => zoom(0.5)} className={BOTAO_ZOOM}>
+          +
+        </button>
+        <button type="button" aria-label="Afastar" disabled={t.k <= 1} onClick={() => zoom(-0.5)} className={BOTAO_ZOOM}>
+          −
+        </button>
+        {t.k > 1 && (
+          <button
+            type="button"
+            aria-label="Restaurar visualização"
+            onClick={() => setT({ k: 1, x: 0, y: 0 })}
+            className={BOTAO_ZOOM}
+          >
+            ↺
+          </button>
+        )}
+      </div>
+      <div
+        ref={caixa}
+        className="w-full overflow-hidden rounded-2xl"
+        style={{ touchAction: t.k > 1 ? "none" : "pan-y" }}
+        onPointerDown={(e) => {
+          if (t.k <= 1) return;
+          arrasto.current = { px: e.clientX, py: e.clientY, ox: t.x, oy: t.y };
+          moveu.current = false;
+        }}
+        onPointerMove={(e) => {
+          const a = arrasto.current;
+          if (!a) return;
+          const dx = e.clientX - a.px;
+          const dy = e.clientY - a.py;
+          if (Math.abs(dx) + Math.abs(dy) > 4) moveu.current = true;
+          setT((s) => limitar(a.ox + dx, a.oy + dy, s.k));
+        }}
+        onPointerUp={() => {
+          arrasto.current = null;
+        }}
+        onPointerLeave={() => {
+          arrasto.current = null;
+        }}
+        onClickCapture={(e) => {
+          if (moveu.current) {
+            e.stopPropagation();
+            moveu.current = false;
+          }
+        }}
+      >
+        <div style={{ transform: `translate(${t.x}px, ${t.y}px) scale(${t.k})`, transformOrigin: "0 0" }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const CHIP_BASE =
+  "cursor-pointer rounded-full border px-3 py-1 text-[11px] transition-all duration-300";
+
+/** Renderizador único das plantas de andar (Blocos A-subsolo, C, D e E). */
 function PlantaAndarSVG({
   planta,
   salaAtivaId,
@@ -901,86 +1090,129 @@ function PlantaAndarSVG({
   salaAtivaId?: string;
   onSelecionar: (id: string) => void;
 }) {
+  const [filtro, setFiltro] = useState<string | null>(null);
   const [largura, altura] = planta.viewBox;
+  const tipos = Array.from(new Set(planta.zonas.map((z) => z.celula.tipo)));
+
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <svg
-        viewBox={`0 0 ${largura} ${altura}`}
-        className="h-full max-h-[600px] w-full drop-shadow-lg rounded-2xl"
-        xmlns="http://www.w3.org/2000/svg"
-        fontFamily="Arial, Helvetica, sans-serif"
-      >
-        <rect width={largura} height={altura} fill="#09090b" rx="16" />
-        <text x={largura - 20} y="26" fontSize="10" fontWeight="bold" textAnchor="end" fill="#71717a" letterSpacing="1">
-          {planta.titulo}
-        </text>
-
-        {planta.contorno && (
-          <rect
-            x={planta.contorno.x}
-            y={planta.contorno.y}
-            width={planta.contorno.w}
-            height={planta.contorno.h}
-            rx="10"
-            fill="none"
-            stroke="#27272a"
-            strokeWidth="2"
-          />
-        )}
-
-        {planta.corredores?.map((c, i) => (
-          <rect key={`corredor-${i}`} x={c.x} y={c.y} width={c.w} height={c.h} fill="#101013" />
-        ))}
-
-        {planta.vazios?.map((v, i) => (
-          <VazioSVG key={`vazio-${i}`} {...v} />
-        ))}
-
-        {planta.anfiteatros?.map((a, i) => (
-          <AnfiteatroSVG key={`anfiteatro-${i}`} {...a} />
-        ))}
-
-        {planta.zonas.map((zona) => {
-          const ativa = salaAtivaId === zona.celula.id;
-          const aoClicar = () => onSelecionar(zona.celula.id);
-          if (zona.rotunda) return <RotundaSVG key={zona.celula.id} zona={zona} ativa={ativa} onClick={aoClicar} />;
-          if (zona.escada) return <EscadaSVG key={zona.celula.id} zona={zona} ativa={ativa} onClick={aoClicar} />;
-          return (
-            <CelulaSVG
-              key={zona.celula.id}
-              x={zona.x}
-              y={zona.y}
-              width={zona.w}
-              height={zona.h}
-              celula={zona.celula}
-              ativa={ativa}
-              onClick={aoClicar}
-            />
-          );
-        })}
-
-        {planta.rotulos?.map((r, i) => (
-          <text
-            key={`rotulo-${i}`}
-            x={r.x}
-            y={r.y}
-            fontSize="8.5"
-            fontWeight="bold"
-            textAnchor="middle"
-            fill="#71717a"
-            letterSpacing="1"
-            transform={r.rot ? `rotate(${r.rot} ${r.x} ${r.y})` : undefined}
-            className="pointer-events-none select-none"
-          >
-            {r.texto}
+      <ZoomPan>
+        <svg
+          viewBox={`0 0 ${largura} ${altura}`}
+          className="h-full max-h-[600px] w-full drop-shadow-lg rounded-2xl"
+          xmlns="http://www.w3.org/2000/svg"
+          fontFamily="Arial, Helvetica, sans-serif"
+        >
+          <rect width={largura} height={altura} fill="#09090b" rx="16" />
+          <text x={largura - 20} y="26" fontSize="10" fontWeight="bold" textAnchor="end" fill="#71717a" letterSpacing="1">
+            {planta.titulo}
           </text>
-        ))}
-      </svg>
+
+          {planta.contorno && (
+            <rect
+              x={planta.contorno.x}
+              y={planta.contorno.y}
+              width={planta.contorno.w}
+              height={planta.contorno.h}
+              rx="10"
+              fill="none"
+              stroke="#27272a"
+              strokeWidth="2"
+            />
+          )}
+
+          {planta.corredores?.map((c, i) => (
+            <rect key={`corredor-${i}`} x={c.x} y={c.y} width={c.w} height={c.h} fill="#101013" />
+          ))}
+
+          {planta.vazios?.map((v, i) => (
+            <VazioSVG key={`vazio-${i}`} {...v} />
+          ))}
+
+          {planta.anfiteatros?.map((a, i) => (
+            <AnfiteatroSVG key={`anfiteatro-${i}`} {...a} />
+          ))}
+
+          {planta.zonas.map((zona) => {
+            const ativa = salaAtivaId === zona.celula.id;
+            const aoClicar = () => onSelecionar(zona.celula.id);
+            const esmaecida = filtro !== null && zona.celula.tipo !== filtro;
+            if (zona.rotunda)
+              return <RotundaSVG key={zona.celula.id} zona={zona} ativa={ativa} onClick={aoClicar} esmaecida={esmaecida} />;
+            if (zona.escada)
+              return <EscadaSVG key={zona.celula.id} zona={zona} ativa={ativa} onClick={aoClicar} esmaecida={esmaecida} />;
+            return (
+              <CelulaSVG
+                key={zona.celula.id}
+                x={zona.x}
+                y={zona.y}
+                width={zona.w}
+                height={zona.h}
+                celula={zona.celula}
+                ativa={ativa}
+                onClick={aoClicar}
+                esmaecida={esmaecida}
+              />
+            );
+          })}
+
+          {planta.rotulos?.map((r, i) => (
+            <text
+              key={`rotulo-${i}`}
+              x={r.x}
+              y={r.y}
+              fontSize="8.5"
+              fontWeight="bold"
+              textAnchor="middle"
+              fill="#71717a"
+              letterSpacing="1"
+              transform={r.rot ? `rotate(${r.rot} ${r.x} ${r.y})` : undefined}
+              className="pointer-events-none select-none"
+            >
+              {r.texto}
+            </text>
+          ))}
+        </svg>
+      </ZoomPan>
 
       <Legenda itens={planta.legenda} />
+
+      {planta.nota && (
+        <p className="max-w-md px-2 text-center text-[10px] leading-relaxed text-muted-foreground">{planta.nota}</p>
+      )}
+
+      {tipos.length > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Destacar por tipo">
+          <span className="text-[10px] text-muted-foreground">Destacar:</span>
+          {tipos.map((tipo) => (
+            <button
+              key={tipo}
+              type="button"
+              aria-pressed={filtro === tipo}
+              onClick={() => setFiltro(filtro === tipo ? null : tipo)}
+              className={`${CHIP_BASE} ${
+                filtro === tipo
+                  ? "border-neon bg-neon/10 text-neon"
+                  : "border-border text-muted-foreground hover:border-neon/60 hover:text-foreground"
+              }`}
+            >
+              {tipo}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
+const ESCALA_FONTE_A = 1.2;
+
+const ALAS_BLOCO_A: { id: number | "todas"; rotulo: string }[] = [
+  { id: 0, rotulo: "Ala 1 · Reitoria" },
+  { id: 1, rotulo: "Ala 2 · Química" },
+  { id: 2, rotulo: "Ala 3 · Ciências" },
+  { id: "todas", rotulo: "Ver tudo" },
+];
 
 function PlantaBlocoA({
   salaAtivaId,
@@ -989,89 +1221,129 @@ function PlantaBlocoA({
   salaAtivaId?: string;
   onSelecionar: (id: string) => void;
 }) {
+  const [ala, setAla] = useState<number | "todas">(0);
+  const ultima = secoesBlocoA.length - 1;
+  const todas = ala === "todas";
+
+  // Recorte vertical do SVG: mostra uma ala por vez (texto maior) ou o bloco inteiro.
+  const y0 = todas || ala === 0 ? 0 : offsetsSecoes[ala] - 26;
+  const y1 = todas || ala === ultima ? ALTURA_TOTAL_SVG : offsetsSecoes[ala + 1] - 20;
+  const mostrarCabecalho = y0 === 0;
+
+  const svg = (
+    <svg
+      viewBox={`0 ${y0} ${LARGURA_TOTAL} ${y1 - y0}`}
+      className="h-auto w-full drop-shadow-lg rounded-2xl"
+      xmlns="http://www.w3.org/2000/svg"
+      fontFamily="Arial, Helvetica, sans-serif"
+    >
+      <rect y={y0} width={LARGURA_TOTAL} height={y1 - y0} fill="#09090b" rx="16" />
+
+      {mostrarCabecalho && (
+        <>
+          {/* Cabeçalho — REITORIA / Entrada da Reitoria / REITORIA, alinhado às 3 colunas */}
+          <rect x={X_ESQ} y="16" width={LARGURA_ESQ} height="26" fill="#18181b" stroke="#3f3f46" rx="6" />
+          <text
+            x={X_ESQ + LARGURA_ESQ / 2}
+            y="34"
+            fontSize="10"
+            fontWeight="bold"
+            textAnchor="middle"
+            fill="#e4e4e7"
+            letterSpacing="1"
+          >
+            REITORIA
+          </text>
+
+          <rect x={X_CENTRO} y="16" width={LARGURA_CENTRO} height="26" fill="#18181b" stroke="#3f3f46" rx="6" />
+          <text x={X_CENTRO + LARGURA_CENTRO / 2} y="34" fontSize="9" textAnchor="middle" fill="#a1a1aa">
+            Entrada da Reitoria
+          </text>
+
+          <rect x={X_DIR} y="16" width={LARGURA_DIR} height="26" fill="#18181b" stroke="#3f3f46" rx="6" />
+          <text
+            x={X_DIR + LARGURA_DIR / 2}
+            y="34"
+            fontSize="10"
+            fontWeight="bold"
+            textAnchor="middle"
+            fill="#e4e4e7"
+            letterSpacing="1"
+          >
+            REITORIA
+          </text>
+
+          {/* Escada / Você está aqui / Rampa */}
+          <text x={X_ESQ + 4} y="58" fontSize="10" fill="#71717a">
+            Escada
+          </text>
+          <text x={X_CENTRO + LARGURA_CENTRO / 2} y="58" fontSize="10" fontWeight="bold" textAnchor="middle" className="fill-neon">
+            VOCÊ ESTÁ AQUI
+          </text>
+          <text x={X_DIR + LARGURA_DIR - 4} y="58" fontSize="10" textAnchor="end" fill="#71717a">
+            Rampa
+          </text>
+          <line x1={X_ESQ} y1="64" x2={X_DIR + LARGURA_DIR} y2="64" stroke="#27272a" strokeDasharray="4 4" />
+        </>
+      )}
+
+      {secoesBlocoA.map((secao, i) => {
+        if (!todas && ala !== i) return null;
+        const yTopo = offsetsSecoes[i];
+        return (
+          <g key={i}>
+            {i > 0 && (
+              <>
+                <text x={X_ESQ + 4} y={yTopo - 6} fontSize="10" fill="#71717a">
+                  Escada
+                </text>
+                <text x={X_DIR + LARGURA_DIR - 4} y={yTopo - 6} fontSize="10" textAnchor="end" fill="#71717a">
+                  Rampa
+                </text>
+                <line
+                  x1={X_ESQ}
+                  y1={yTopo - 14}
+                  x2={X_DIR + LARGURA_DIR}
+                  y2={yTopo - 14}
+                  stroke="#27272a"
+                  strokeDasharray="4 4"
+                />
+              </>
+            )}
+            {renderColuna(secao.esquerda, X_ESQ, yTopo, LARGURA_ESQ, salaAtivaId, onSelecionar)}
+            {renderColuna(secao.centro, X_CENTRO, yTopo, LARGURA_CENTRO, salaAtivaId, onSelecionar)}
+            {renderColuna(secao.direita, X_DIR, yTopo, LARGURA_DIR, salaAtivaId, onSelecionar)}
+          </g>
+        );
+      })}
+    </svg>
+  );
+
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <svg
-        viewBox={`0 0 ${LARGURA_TOTAL} ${ALTURA_TOTAL_SVG}`}
-        className="h-full max-h-[600px] w-full drop-shadow-lg rounded-2xl"
-        xmlns="http://www.w3.org/2000/svg"
-        fontFamily="Arial, Helvetica, sans-serif"
-      >
-        <rect width={LARGURA_TOTAL} height={ALTURA_TOTAL_SVG} fill="#09090b" rx="16" />
+      <div className="flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Escolher ala do bloco">
+        {ALAS_BLOCO_A.map((a) => (
+          <button
+            key={String(a.id)}
+            type="button"
+            aria-pressed={ala === a.id}
+            onClick={() => setAla(a.id)}
+            className={`${CHIP_BASE} ${
+              ala === a.id
+                ? "border-neon bg-neon/10 text-neon"
+                : "border-border text-muted-foreground hover:border-neon/60 hover:text-foreground"
+            }`}
+          >
+            {a.rotulo}
+          </button>
+        ))}
+      </div>
 
-        {/* Cabeçalho — REITORIA / Entrada da Reitoria / REITORIA, alinhado às 3 colunas */}
-        <rect x={X_ESQ} y="16" width={LARGURA_ESQ} height="26" fill="#18181b" stroke="#3f3f46" rx="6" />
-        <text
-          x={X_ESQ + LARGURA_ESQ / 2}
-          y="34"
-          fontSize="10"
-          fontWeight="bold"
-          textAnchor="middle"
-          fill="#e4e4e7"
-          letterSpacing="1"
-        >
-          REITORIA
-        </text>
-
-        <rect x={X_CENTRO} y="16" width={LARGURA_CENTRO} height="26" fill="#18181b" stroke="#3f3f46" rx="6" />
-        <text x={X_CENTRO + LARGURA_CENTRO / 2} y="34" fontSize="9" textAnchor="middle" fill="#a1a1aa">
-          Entrada da Reitoria
-        </text>
-
-        <rect x={X_DIR} y="16" width={LARGURA_DIR} height="26" fill="#18181b" stroke="#3f3f46" rx="6" />
-        <text
-          x={X_DIR + LARGURA_DIR / 2}
-          y="34"
-          fontSize="10"
-          fontWeight="bold"
-          textAnchor="middle"
-          fill="#e4e4e7"
-          letterSpacing="1"
-        >
-          REITORIA
-        </text>
-
-        {/* Escada / Você está aqui / Rampa */}
-        <text x={X_ESQ + 4} y="58" fontSize="10" fill="#71717a">
-          Escada
-        </text>
-        <text x={X_CENTRO + LARGURA_CENTRO / 2} y="58" fontSize="10" fontWeight="bold" textAnchor="middle" className="fill-neon">
-          VOCÊ ESTÁ AQUI
-        </text>
-        <text x={X_DIR + LARGURA_DIR - 4} y="58" fontSize="10" textAnchor="end" fill="#71717a">
-          Rampa
-        </text>
-        <line x1={X_ESQ} y1="64" x2={X_DIR + LARGURA_DIR} y2="64" stroke="#27272a" strokeDasharray="4 4" />
-
-        {secoesBlocoA.map((secao, i) => {
-          const yTopo = offsetsSecoes[i];
-          return (
-            <g key={i}>
-              {i > 0 && (
-                <>
-                  <text x={X_ESQ + 4} y={yTopo - 6} fontSize="10" fill="#71717a">
-                    Escada
-                  </text>
-                  <text x={X_DIR + LARGURA_DIR - 4} y={yTopo - 6} fontSize="10" textAnchor="end" fill="#71717a">
-                    Rampa
-                  </text>
-                  <line
-                    x1={X_ESQ}
-                    y1={yTopo - 14}
-                    x2={X_DIR + LARGURA_DIR}
-                    y2={yTopo - 14}
-                    stroke="#27272a"
-                    strokeDasharray="4 4"
-                  />
-                </>
-              )}
-              {renderColuna(secao.esquerda, X_ESQ, yTopo, LARGURA_ESQ, salaAtivaId, onSelecionar)}
-              {renderColuna(secao.centro, X_CENTRO, yTopo, LARGURA_CENTRO, salaAtivaId, onSelecionar)}
-              {renderColuna(secao.direita, X_DIR, yTopo, LARGURA_DIR, salaAtivaId, onSelecionar)}
-            </g>
-          );
-        })}
-      </svg>
+      {todas ? (
+        <div className="max-h-[640px] w-full overflow-y-auto rounded-2xl">{svg}</div>
+      ) : (
+        <ZoomPan key={String(ala)}>{svg}</ZoomPan>
+      )}
 
       <Legenda itens={LEGENDA_BLOCO_A} />
     </div>
@@ -1095,6 +1367,7 @@ function renderColuna(
       const celula = linha.celulas[0];
       return (
         <CelulaSVG
+          escalaFonte={ESCALA_FONTE_A}
           key={celula.id}
           x={x}
           y={yLinha}
@@ -1111,6 +1384,7 @@ function renderColuna(
     return (
       <g key={`par-${li}`}>
         <CelulaSVG
+          escalaFonte={ESCALA_FONTE_A}
           x={x}
           y={yLinha}
           width={metade}
@@ -1120,6 +1394,7 @@ function renderColuna(
           onClick={() => onSelecionar(linha.celulas[0].id)}
         />
         <CelulaSVG
+          escalaFonte={ESCALA_FONTE_A}
           x={x + metade + 6}
           y={yLinha}
           width={metade}
@@ -1188,6 +1463,7 @@ function BlocoMapa({
   height,
   legenda,
   onClick,
+  onHover,
 }: {
   sigla: string;
   x: number;
@@ -1196,10 +1472,27 @@ function BlocoMapa({
   height: number;
   legenda: string;
   onClick: () => void;
+  onHover: (ativo: boolean) => void;
 }) {
   const cor = CORES_BLOCOS[sigla];
   return (
-    <g onClick={onClick} className="cursor-pointer group">
+    <g
+      onClick={onClick}
+      onMouseEnter={() => onHover(true)}
+      onMouseLeave={() => onHover(false)}
+      onFocus={() => onHover(true)}
+      onBlur={() => onHover(false)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label={`Abrir o Bloco ${sigla}: ${legenda}`}
+      className="cursor-pointer group outline-none focus-visible:[&>rect:first-of-type]:stroke-neon"
+    >
       <rect
         x={x}
         y={y}
@@ -1285,11 +1578,11 @@ const blocosCampus: Bloco[] = [
     id: "bloco-e",
     sigla: "Bloco E",
     nome: "Bloco E - Mecânicas",
-    descricao: "Oficinas, laboratórios de mecânica dos fluidos e resistência dos materiais (salas 700 a 713).",
-    salas: [
-      { id: "e1", nome: "Oficina Mecânica", tipo: "Prática" },
-      { id: "e2", nome: "Lab de Ensaios de Materiais", tipo: "Pesquisa" },
-    ],
+    descricao:
+      "Oficinas e laboratórios de mecânica (salas 700 a 713), com a área de usinagem (retífica, fresadora e centro de usinagem). Os marcadores coloridos indicam o EPI exigido em cada área.",
+    andares: [{ id: "terreo", rotulo: "Oficina" }],
+    andarPadrao: "terreo",
+    salas: salasDaPlanta("bloco-e:terreo", "terreo"),
   },
   {
     id: "bloco-f",
@@ -1324,6 +1617,10 @@ function andarInicial(bloco: Bloco): AndarId | null {
   return bloco.andarPadrao ?? bloco.andares?.[0]?.id ?? null;
 }
 
+function normalizar(texto: string): string {
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 function rotuloAndar(bloco: Bloco | null, id?: AndarId): string | undefined {
   return bloco?.andares?.find((a) => a.id === id)?.rotulo;
 }
@@ -1337,6 +1634,8 @@ export function MapaCampus() {
   const [blocoSelecionado, setBlocoSelecionado] = useState<Bloco | null>(null);
   const [salaAtiva, setSalaAtiva] = useState<Sala | null>(null);
   const [andarAtivo, setAndarAtivo] = useState<AndarId | null>(null);
+  const [blocoPrevia, setBlocoPrevia] = useState<Bloco | null>(null);
+  const [busca, setBusca] = useState("");
 
   // Blocos sem andar definido mostram tudo; os demais filtram pelo andar ativo.
   const salasVisiveis = blocoSelecionado
@@ -1351,6 +1650,7 @@ export function MapaCampus() {
   const selecionarBloco = (bloco: Bloco) => {
     setBlocoSelecionado(bloco);
     setSalaAtiva(null);
+    setBlocoPrevia(null);
     setAndarAtivo(andarInicial(bloco));
   };
 
@@ -1372,6 +1672,29 @@ export function MapaCampus() {
 
   const andarDaSala = rotuloAndar(blocoSelecionado, salaAtiva?.andar);
 
+  const aoPassar = (sigla: string) => (ativo: boolean) =>
+    setBlocoPrevia(ativo ? (blocosCampus.find((b) => b.id === `bloco-${sigla.toLowerCase()}`) ?? null) : null);
+
+  const termoBusca = normalizar(busca.trim());
+  const resultados =
+    termoBusca.length < 2
+      ? []
+      : blocosCampus
+          .flatMap((bloco) =>
+            bloco.salas
+              .filter((sala) => normalizar(`${sala.nome} ${sala.numero ?? ""} ${sala.tipo}`).includes(termoBusca))
+              .map((sala) => ({ bloco, sala }))
+          )
+          .slice(0, 8);
+
+  const irParaSala = (bloco: Bloco, sala: Sala) => {
+    setBlocoSelecionado(bloco);
+    setAndarAtivo(sala.andar ?? andarInicial(bloco));
+    setSalaAtiva(sala);
+    setBlocoPrevia(null);
+    setBusca("");
+  };
+
   return (
     <section id="mapa" className="relative px-5 py-24">
       <div ref={ref} className="mx-auto max-w-6xl">
@@ -1388,6 +1711,40 @@ export function MapaCampus() {
               : "Passe o mouse ou clique em qualquer bloco (A a H) na silhueta do campus abaixo."}
           </p>
         </header>
+
+        <div className="relative mt-6 max-w-2xl">
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar sala ou laboratório (ex.: C205, LAB3, Retífica, 301)"
+            aria-label="Buscar sala, laboratório ou departamento"
+            className="w-full rounded-full border border-border bg-secondary/40 px-5 py-2.5 text-[13px] text-foreground transition-all duration-300 placeholder:text-muted-foreground focus:border-neon focus:outline-none"
+          />
+          {termoBusca.length >= 2 && (
+            <ul className="absolute z-20 mt-2 w-full space-y-1 rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-lg backdrop-blur">
+              {resultados.length === 0 ? (
+                <li className="px-3.5 py-2 text-[12px] text-muted-foreground">Nenhum ambiente encontrado.</li>
+              ) : (
+                resultados.map(({ bloco, sala }) => (
+                  <li key={sala.id}>
+                    <button
+                      type="button"
+                      onClick={() => irParaSala(bloco, sala)}
+                      className="w-full cursor-pointer rounded-xl px-3.5 py-2 text-left transition-all duration-300 hover:bg-secondary/60"
+                    >
+                      <span className="block text-[13px] font-medium text-foreground">{sala.nome}</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {bloco.sigla} · {sala.tipo}
+                        {rotuloAndar(bloco, sala.andar) ? ` · ${rotuloAndar(bloco, sala.andar)}` : ""}
+                      </span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
 
         {blocoSelecionado && (
           <div className="mt-6">
@@ -1434,12 +1791,28 @@ export function MapaCampus() {
                   </text>
 
                   {/* Linha 1 — Blocos F, G, H */}
-                  <BlocoMapa sigla="F" x={24} y={40} width={120} height={72} legenda="DIRETORIA" onClick={() => handleBlocoClick("F")} />
-                  <BlocoMapa sigla="G" x={154} y={40} width={300} height={72} legenda="EM CONSTRUÇÃO" onClick={() => handleBlocoClick("G")} />
-                  <BlocoMapa sigla="H" x={464} y={40} width={212} height={72} legenda="ENGENHARIAS" onClick={() => handleBlocoClick("H")} />
+                  <BlocoMapa sigla="F" x={24} y={40} width={120} height={72} legenda="DIRETORIA" onClick={() => handleBlocoClick("F")} onHover={aoPassar("F")} />
+                  <BlocoMapa sigla="G" x={154} y={40} width={300} height={72} legenda="EM CONSTRUÇÃO" onClick={() => handleBlocoClick("G")} onHover={aoPassar("G")} />
+                  <BlocoMapa sigla="H" x={464} y={40} width={212} height={72} legenda="ENGENHARIAS" onClick={() => handleBlocoClick("H")} onHover={aoPassar("H")} />
 
                   {/* Faixa amarela — Bloco A (corredor / "você está aqui") */}
-                  <g onClick={() => handleBlocoClick("A")} className="cursor-pointer group">
+                  <g
+                    onClick={() => handleBlocoClick("A")}
+                    onMouseEnter={() => aoPassar("A")(true)}
+                    onMouseLeave={() => aoPassar("A")(false)}
+                    onFocus={() => aoPassar("A")(true)}
+                    onBlur={() => aoPassar("A")(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleBlocoClick("A");
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label="Abrir o Bloco A: Licenciaturas"
+                    className="cursor-pointer group outline-none focus-visible:[&>rect:first-of-type]:stroke-neon"
+                  >
                     <rect
                       x="24"
                       y="120"
@@ -1450,7 +1823,7 @@ export function MapaCampus() {
                       className="transition-all duration-300 group-hover:fill-amber-400"
                     />
                     <line x1="160" y1="135" x2="182" y2="135" stroke="#dc2626" strokeWidth="2" />
-                    <circle cx="182" cy="135" r="4" fill="#dc2626" />
+                    <circle cx="182" cy="135" r="4" fill="#dc2626" className="motion-safe:animate-pulse" />
                     <text x="40" y="139" fontSize="9" fontWeight="bold" fill="#1c1917">
                       VOCÊ ESTÁ AQUI
                     </text>
@@ -1463,10 +1836,10 @@ export function MapaCampus() {
                   <circle cx="184" cy="166" r="9" fill="#eab308" opacity="0.85" />
                   <circle cx="350" cy="166" r="9" fill="#eab308" opacity="0.85" />
 
-                  <BlocoMapa sigla="E" x={24} y={166} width={154} height={92} legenda="MECÂNICAS" onClick={() => handleBlocoClick("E")} />
-                  <BlocoMapa sigla="D" x={190} y={166} width={154} height={92} legenda="AUTOMAÇÕES" onClick={() => handleBlocoClick("D")} />
-                  <BlocoMapa sigla="C" x={356} y={166} width={154} height={92} legenda="ELETRÔNICA E SISTEMAS" onClick={() => handleBlocoClick("C")} />
-                  <BlocoMapa sigla="B" x={522} y={166} width={154} height={92} legenda="EM CONSTRUÇÃO" onClick={() => handleBlocoClick("B")} />
+                  <BlocoMapa sigla="E" x={24} y={166} width={154} height={92} legenda="MECÂNICAS" onClick={() => handleBlocoClick("E")} onHover={aoPassar("E")} />
+                  <BlocoMapa sigla="D" x={190} y={166} width={154} height={92} legenda="AUTOMAÇÕES" onClick={() => handleBlocoClick("D")} onHover={aoPassar("D")} />
+                  <BlocoMapa sigla="C" x={356} y={166} width={154} height={92} legenda="ELETRÔNICA E SISTEMAS" onClick={() => handleBlocoClick("C")} onHover={aoPassar("C")} />
+                  <BlocoMapa sigla="B" x={522} y={166} width={154} height={92} legenda="EM CONSTRUÇÃO" onClick={() => handleBlocoClick("B")} onHover={aoPassar("B")} />
 
                   {/* Área verde — jardim, pista de atletismo, teatro e vestiários */}
                   <rect x="24" y="270" width="652" height="150" fill="#0f1a14" stroke="#1c2b21" rx="12" />
@@ -1513,7 +1886,7 @@ export function MapaCampus() {
                   <p className="text-xs text-muted-foreground mt-1">{blocoSelecionado.descricao}</p>
                 </div>
 
-                {blocoSelecionado.andares && (
+                {blocoSelecionado.andares && blocoSelecionado.andares.length > 1 && (
                   <SeletorAndar
                     andares={blocoSelecionado.andares}
                     andar={andarAtivo}
@@ -1528,6 +1901,7 @@ export function MapaCampus() {
                   <PlantaBlocoA salaAtivaId={salaAtiva?.id} onSelecionar={selecionarSalaPorId} />
                 ) : plantaAtual ? (
                   <PlantaAndarSVG
+                    key={`${blocoSelecionado.id}:${andarAtivo}`}
                     planta={plantaAtual}
                     salaAtivaId={salaAtiva?.id}
                     onSelecionar={selecionarSalaPorId}
@@ -1562,14 +1936,18 @@ export function MapaCampus() {
                   ? salaAtiva
                     ? salaAtiva.nome
                     : blocoSelecionado.nome
-                  : "Navegação por Blocos (A - H)"}
+                  : blocoPrevia
+                    ? blocoPrevia.nome
+                    : "Navegação por Blocos (A - H)"}
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 {blocoSelecionado
                   ? salaAtiva
                     ? `${salaAtiva.tipo} · Localizado no ${blocoSelecionado.nome}${andarDaSala ? ` (${andarDaSala})` : ""}.`
                     : blocoSelecionado.descricao
-                  : "Passe o mouse ou clique em qualquer bloco no mapa para visualizar os departamentos."}
+                  : blocoPrevia
+                    ? `${blocoPrevia.descricao} Clique para abrir a planta.`
+                    : "Passe o mouse ou clique em qualquer bloco no mapa para visualizar os departamentos."}
               </p>
             </div>
 
