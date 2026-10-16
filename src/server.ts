@@ -49,7 +49,20 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      const url = new URL(request.url);
+      // Only the anonymous, public HTML home is shared at the CDN.
+      // Browsers still revalidate; errors and server functions never enter this cache.
+      if (request.method === "GET" && url.pathname === "/" && !url.search &&
+          !request.headers.has("authorization") && !request.headers.has("cookie") &&
+          normalized.status === 200 && !normalized.headers.has("set-cookie") &&
+          normalized.headers.get("content-type")?.includes("text/html")) {
+        const headers = new Headers(normalized.headers);
+        headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+        headers.set("Vercel-CDN-Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+        return new Response(normalized.body, { status: normalized.status, headers });
+      }
+      return normalized;
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

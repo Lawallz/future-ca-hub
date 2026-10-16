@@ -1,40 +1,7 @@
-import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { useReduceMotion } from "@/lib/motion-preference";
-
 export function Hero() {
-  const root = useRef<HTMLElement>(null);
-  const reduced = useReduceMotion();
-
-  useEffect(() => {
-    if (reduced) return;
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.from("[data-hero-badge]", { y: 20, opacity: 0, duration: 0.7 })
-        .from(
-          "[data-hero-line]",
-          { y: 44, opacity: 0, duration: 1, stagger: 0.1, filter: "blur(10px)" },
-          "-=0.35",
-        )
-        .from("[data-hero-sub]", { y: 20, opacity: 0, duration: 0.8 }, "-=0.5")
-        .from("[data-hero-actions]", { y: 16, duration: 0.6, clearProps: "transform" }, "-=0.45")
-        .from("[data-hero-stat]", { y: 16, opacity: 0, duration: 0.6, stagger: 0.08 }, "-=0.35");
-
-      gsap.to("[data-hero-orb]", {
-        yPercent: 12,
-        duration: 6,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-    }, root);
-    return () => ctx.revert();
-  }, [reduced]);
-
   return (
     <section
       id="top"
-      ref={root}
       className="relative flex min-h-[92vh] items-center justify-center overflow-hidden px-5 pt-28 pb-20"
     >
       <div className="grid-lines absolute inset-0 opacity-60" aria-hidden="true" />

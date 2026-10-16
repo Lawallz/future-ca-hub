@@ -8,6 +8,12 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 import { imagetools } from "vite-imagetools";
 
+// Nitro selects a different public directory for Vercel builds.
+const publicDir = !process.env.LOVABLE_NITRO_PRESET &&
+  (process.env.VERCEL || process.env.NITRO_PRESET === "vercel")
+  ? ".vercel/output/static"
+  : ".output/public";
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
@@ -19,9 +25,11 @@ export default defineConfig({
       imagetools(),
       VitePWA({
         strategies: "generateSW",
+        outDir: publicDir,
         registerType: "prompt",
         injectRegister: null,
         filename: "sw.js",
+        includeAssets: ["offline.html"],
         devOptions: { enabled: false },
         manifest: {
           name: "CA-ADS IFSP São Paulo",
@@ -30,10 +38,14 @@ export default defineConfig({
           display: "standalone",
           background_color: "#0b0714",
           theme_color: "#7c3aed",
-          icons: [{ src: "/favicon.ico", sizes: "48x48", type: "image/x-icon" }],
+          icons: [{ src: "/favicon.ico.jpg", sizes: "any", type: "image/jpeg" }],
         },
         workbox: {
-          globPatterns: ["**/*.{js,css,woff2,svg,ico,png,avif,webp}", "offline.html"],
+          // Cache the app shell, but fetch optional sections/WebGL only when used.
+          globDirectory: publicDir,
+          globPatterns: ["**/*.{js,css}"],
+          globIgnores: ["**/ParticleField-*.js", "**/MapaCampus-*.js", "**/Comunidades-*.js", "**/Tutoriais-*.js"],
+          navigateFallback: null,
           navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
@@ -65,7 +77,11 @@ export default defineConfig({
             },
           ],
         },
-      }),
+      }).map((plugin) => ({
+        ...plugin,
+        // Generate once, before Nitro snapshots the public asset metadata.
+        applyToEnvironment: (environment: { name: string }) => environment.name === "client",
+      })),
     ],
   },
 });

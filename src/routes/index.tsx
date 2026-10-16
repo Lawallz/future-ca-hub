@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
-import gsap from "gsap";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Header } from "@/components/site/Header";
 import { Produtos } from "@/components/site/Produtos";
 import { Roadmap } from "@/components/site/Roadmap";
@@ -8,7 +7,6 @@ import { Hero } from "@/components/site/Hero";
 import { Horarios } from "@/components/site/Horarios";
 import { BancoDeProvas } from "@/components/site/BancoDeProvas";
 import { Footer } from "@/components/site/Footer";
-import { IntroScreen } from "@/components/site/IntroScreen";
 import { LazySection } from "@/components/site/LazySection";
 import { OfflineNotice } from "@/components/site/OfflineNotice";
 import { UpdatePrompt } from "@/components/site/UpdatePrompt";
@@ -19,16 +17,22 @@ import { onServiceWorkerUpdate } from "@/lib/sw-update";
 // Each heavy section ships in its own chunk, fetched when it nears the viewport.
 
 const Comunidades = lazy(() =>
-  import("@/components/site/Comunidades").then((m) => ({ default: m.Comunidades })),
+  import("@/components/site/Comunidades").then((m) => ({
+    default: m.Comunidades,
+  })),
 );
 const Tutoriais = lazy(() =>
   import("@/components/site/Tutoriais").then((m) => ({ default: m.Tutoriais })),
 );
 const MapaCampus = lazy(() =>
-  import("@/components/site/MapaCampus").then((m) => ({ default: m.MapaCampus })),
+  import("@/components/site/MapaCampus").then((m) => ({
+    default: m.MapaCampus,
+  })),
 );
 const ParticleField = lazy(() =>
-  import("@/components/site/ParticleField").then((m) => ({ default: m.ParticleField })),
+  import("@/components/site/ParticleField").then((m) => ({
+    default: m.ParticleField,
+  })),
 );
 
 const title = "Centro Acadêmico de ADS - IFSP Campus São Paulo";
@@ -50,45 +54,41 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [revealed, setRevealed] = useState(false);
   const [showBackground, setShowBackground] = useState(false);
-  const content = useRef<HTMLDivElement>(null);
   const reduced = useReduceMotion();
   const [updateReady, setUpdateReady] = useState(false);
 
-  // Warm the next section chunks on scroll / hover intent.
+  // Warm section chunks only on navigation intent.
   useEffect(() => initSectionPrefetch(), []);
   useEffect(() => onServiceWorkerUpdate(() => setUpdateReady(true)), []);
 
-  // Defer the 3D background until the browser is idle (and never when the
-  // visitor asked for reduced animations).
+  // Decorative WebGL must not compete with navigation on mobile/slow devices.
   useEffect(() => {
-    if (reduced) {
+    const connection = navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+      deviceMemory?: number;
+    };
+    if (
+      reduced ||
+      window.matchMedia("(pointer: coarse), (max-width: 767px)").matches ||
+      connection.connection?.saveData ||
+      /(^|-)2g$|^3g$/.test(connection.connection?.effectiveType ?? "") ||
+      (connection.deviceMemory ?? 8) <= 4
+    ) {
       setShowBackground(false);
       return;
     }
-    const idle =
-      window.requestIdleCallback?.(() => setShowBackground(true)) ??
-      window.setTimeout(() => setShowBackground(true), 1200);
+    let idle: number | undefined;
+    const timer = window.setTimeout(() => {
+      if (window.requestIdleCallback) {
+        idle = window.requestIdleCallback(() => setShowBackground(true));
+      } else setShowBackground(true);
+    }, 2500);
     return () => {
-      if (typeof idle === "number") window.clearTimeout(idle);
-      else window.cancelIdleCallback?.(idle as unknown as number);
+      window.clearTimeout(timer);
+      if (idle !== undefined) window.cancelIdleCallback(idle);
     };
   }, [reduced]);
-
-  useEffect(() => {
-    if (!revealed || !content.current || reduced) return;
-    const ctx = gsap.context(() => {
-      gsap.from("[data-cascade]", {
-        y: 40,
-        opacity: 0,
-        duration: 0.9,
-        stagger: 0.12,
-        ease: "power3.out",
-      });
-    }, content);
-    return () => ctx.revert();
-  }, [revealed, reduced]);
 
   return (
     <div className="bg-surface-deep text-foreground relative min-h-screen">
@@ -99,11 +99,10 @@ function Index() {
       )}
       {updateReady && <UpdatePrompt onDismiss={() => setUpdateReady(false)} />}
       <OfflineNotice />
-      <IntroScreen onDone={() => setRevealed(true)} />
-      <div ref={content} className="relative z-10">
+      <div className="relative z-10">
         <Header />
         <main>
-          <Hero key={revealed ? "revealed" : "idle"} />
+          <Hero />
           <div data-cascade>
             <BancoDeProvas />
           </div>
@@ -113,17 +112,17 @@ function Index() {
           <Roadmap />
           <Produtos />
           <div data-cascade>
-            <LazySection label="comunidades">
+            <LazySection id="comunidades" label="comunidades">
               <Comunidades />
             </LazySection>
           </div>
           <div data-cascade>
-            <LazySection label="tutoriais">
+            <LazySection id="tutoriais" label="tutoriais">
               <Tutoriais />
             </LazySection>
           </div>
           <div data-cascade>
-            <LazySection label="mapa do campus">
+            <LazySection id="mapa" label="mapa do campus">
               <MapaCampus />
             </LazySection>
           </div>

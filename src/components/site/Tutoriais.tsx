@@ -103,7 +103,7 @@ export function Tutoriais() {
   const ref = useReveal<HTMLDivElement>();
 
   return (
-    <section id="tutoriais" className="relative px-5 py-24">
+    <section className="relative px-5 py-24">
       <div ref={ref} className="mx-auto max-w-6xl">
         <header className="max-w-2xl">
           <p data-reveal className="text-[12px] tracking-[0.2em] text-neon-soft uppercase">

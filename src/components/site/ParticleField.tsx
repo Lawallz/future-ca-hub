@@ -38,8 +38,8 @@ const TIERS: Record<
   }
 > = {
   low: { count: 450, pixelRatio: 1, antialias: false, wireDetail: 1, wireOpacity: 0.16, size: 0.11, sphereSegments: 24, orbits: 1, comets: 0 },
-  medium: { count: 1000, pixelRatio: 1.35, antialias: false, wireDetail: 2, wireOpacity: 0.18, size: 0.095, sphereSegments: 36, orbits: 2, comets: 1 },
-  high: { count: 1800, pixelRatio: 1.75, antialias: true, wireDetail: 2, wireOpacity: 0.2, size: 0.085, sphereSegments: 56, orbits: 3, comets: 2 },
+  medium: { count: 1000, pixelRatio: 1, antialias: false, wireDetail: 2, wireOpacity: 0.18, size: 0.095, sphereSegments: 36, orbits: 2, comets: 1 },
+  high: { count: 1800, pixelRatio: 1.25, antialias: false, wireDetail: 2, wireOpacity: 0.2, size: 0.085, sphereSegments: 56, orbits: 3, comets: 2 },
 };
 
 /* Paleta do CA-ADS: roxo + verde */
@@ -225,7 +225,9 @@ function makeGlowSprite(map: THREE.Texture, color: string, opacity: number, scal
 
 /** Wireframe poliédrico com atributos para o pulso de energia por aresta. */
 function makeNet(radius: number, detail: number, base: number, a: string, b: string) {
-  const edges = new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(radius, detail));
+  const source = new THREE.IcosahedronGeometry(radius, detail);
+  const edges = new THREE.EdgesGeometry(source);
+  source.dispose();
   const n = edges.attributes.position.count;
   const prog = new Float32Array(n);
   const seed = new Float32Array(n);
@@ -511,7 +513,7 @@ export function ParticleField() {
     document.addEventListener("visibilitychange", onVisibility);
 
     // Frame budget: cap FPS on weaker devices to save battery/CPU.
-    const maxFps = tier === "low" ? 30 : tier === "medium" ? 45 : 60;
+    const maxFps = 30;
     const frameInterval = 1000 / maxFps;
     let lastFrame = 0;
     let prev = 0;
