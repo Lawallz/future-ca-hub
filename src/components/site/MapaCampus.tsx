@@ -1209,8 +1209,8 @@ const ESCALA_FONTE_A = 1.2;
 
 const ALAS_BLOCO_A: { id: number | "todas"; rotulo: string }[] = [
   { id: 0, rotulo: "Ala 1 · Reitoria" },
-  { id: 1, rotulo: "Ala 2 · Química" },
-  { id: 2, rotulo: "Ala 3 · Ciências" },
+  { id: 1, rotulo: "Ala 2 · Centro" },
+  { id: 2, rotulo: "Ala 3 · Final" },
   { id: "todas", rotulo: "Ver tudo" },
 ];
 
