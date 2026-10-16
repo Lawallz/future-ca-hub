@@ -45,6 +45,7 @@ export function Header() {
             <li key={l.href}>
               <a
                 href={l.href}
+                data-prefetch={l.href.slice(1)}
                 className="text-muted-foreground hover:bg-secondary hover:text-foreground rounded-full px-2 py-2 text-[12px] transition-colors duration-300"
               >
                 {l.label}
@@ -87,6 +88,7 @@ export function Header() {
             <li key={l.href}>
               <a
                 href={l.href}
+                data-prefetch={l.href.slice(1)}
                 onClick={() => setOpen(false)}
                 className="text-muted-foreground hover:bg-secondary hover:text-foreground block rounded-lg px-3 py-2 text-sm transition-colors"
               >

@@ -28,12 +28,11 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>(deps: unknown[
         gsap.set(targets, { opacity: 1, y: 0, filter: "none" });
         return;
       }
-      gsap.set(targets, { opacity: 0, y: 28, filter: "blur(6px)" });
+      gsap.set(targets, { opacity: 0, y: 28 });
       gsap.to(targets, {
         opacity: 1,
         y: 0,
-        filter: "blur(0px)",
-        duration: 0.9,
+        duration: 0.45,
         ease: "power3.out",
         stagger: 0.08,
         scrollTrigger: {

@@ -6,16 +6,27 @@ import { SectionSkeleton } from "./Skeletons";
  * close to the viewport, so each section chunk is fetched on demand.
  */
 export function LazySection({
+  id,
   label,
   children,
   rootMargin = "400px",
 }: {
+  id: string;
   label: string;
   children: ReactNode;
   rootMargin?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const onHash = () => {
+      if (window.location.hash === `#${id}`) setShow(true);
+    };
+    onHash();
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [id]);
 
   useEffect(() => {
     const el = ref.current;
@@ -38,9 +49,11 @@ export function LazySection({
   }, [show, rootMargin]);
 
   return (
-    <div ref={ref}>
+    <div ref={ref} id={id} className="scroll-mt-20">
       {show ? (
-        <Suspense fallback={<SectionSkeleton label={label} />}>{children}</Suspense>
+        <Suspense fallback={<SectionSkeleton label={label} />}>
+          {children}
+        </Suspense>
       ) : (
         <SectionSkeleton label={label} />
       )}

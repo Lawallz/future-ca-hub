@@ -13,7 +13,7 @@ export function Hero() {
       tl.from("[data-hero-badge]", { y: 20, opacity: 0, duration: 0.7 })
         .from(
           "[data-hero-line]",
-          { y: 44, opacity: 0, duration: 1, stagger: 0.1, filter: "blur(10px)" },
+          { y: 16, duration: 0.45, stagger: 0.05, clearProps: "transform" },
           "-=0.35",
         )
         .from("[data-hero-sub]", { y: 20, opacity: 0, duration: 0.8 }, "-=0.5")
