@@ -971,7 +971,7 @@ function AnfiteatroSVG({ cx, cy, lado }: { cx: number; cy: number; lado: "esq" |
       ))}
       <circle cx={cx} cy={cy} r="8" stroke="#27272a" />
       <text x={cx} y={cy + 74} fontSize="7" textAnchor="middle" fill="#52525b" stroke="none" letterSpacing="1">
-        ANFITEATRO
+        CARACOL
       </text>
     </g>
   );
@@ -1862,10 +1862,10 @@ export function MapaCampus() {
 
                   <rect x="420" y="308" width="60" height="30" fill="#18181b" stroke="#3f3f46" rx="6" />
                   <text x="450" y="327" fontSize="12" textAnchor="middle" fill="#71717a">
-                    🎭
+                    🏋️‍♀️
                   </text>
                   <text x="450" y="352" fontSize="7.5" textAnchor="middle" fill="#71717a">
-                    TEATRO
+                    SALA DE EDUCAÇÃO FÍSICA
                   </text>
 
                   {/* Rua Av. Cruzeiro do Sul — faixa inferior */}
