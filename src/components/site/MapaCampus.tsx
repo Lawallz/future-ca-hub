@@ -1,13 +1,24 @@
 import { useState } from "react";
 import { useReveal } from "@/lib/gsap-reveal";
 
+/* ------------------------------------------------------------------ */
+/* TIPOS                                                               */
+/* ------------------------------------------------------------------ */
+
+type AndarId = "subsolo" | "terreo" | "mezanino" | "pav1";
+
 type Sala = {
   id: string;
   nome: string;
   tipo: string;
   numero?: string;
   cor?: string;
-  andar?: 1 | 2;
+  andar?: AndarId;
+};
+
+type Andar = {
+  id: AndarId;
+  rotulo: string;
 };
 
 type Bloco = {
@@ -16,13 +27,10 @@ type Bloco = {
   nome: string;
   descricao: string;
   salas: Sala[];
+  /** Só os blocos com mais de uma planta definem andares (mostra o seletor). */
+  andares?: Andar[];
+  andarPadrao?: AndarId;
 };
-
-/* ------------------------------------------------------------------ */
-/* PLANTA VETORIZADA DO BLOCO A                                        */
-/* Baseada no quadro de sinalização real do bloco (Reitoria / Turnos / */
-/* Departamentos / Laboratórios), redesenhada no tema escuro do site.  */
-/* ------------------------------------------------------------------ */
 
 type CelulaPlanta = {
   id: string;
@@ -30,6 +38,8 @@ type CelulaPlanta = {
   tipo: string;
   cor: string;
   numero?: string;
+  /** Texto curto desenhado dentro da célula (use "\n" para quebrar linha). */
+  rotulo?: string;
 };
 
 type LinhaPlanta = {
@@ -43,6 +53,34 @@ type SecaoPlanta = {
   direita: LinhaPlanta[];
 };
 
+type ZonaPlanta = {
+  celula: CelulaPlanta;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  escada?: { seta?: "↑" | "↓" };
+  rotunda?: boolean;
+};
+
+type Retangulo = { x: number; y: number; w: number; h: number };
+
+type PlantaAndar = {
+  titulo: string;
+  viewBox: [number, number];
+  contorno?: Retangulo;
+  corredores?: Retangulo[];
+  vazios?: Retangulo[];
+  anfiteatros?: { cx: number; cy: number; lado: "esq" | "dir" }[];
+  rotulos?: { x: number; y: number; texto: string; rot?: number }[];
+  zonas: ZonaPlanta[];
+  legenda: { tipo: string; cor: string }[];
+};
+
+/* ------------------------------------------------------------------ */
+/* CORES E HELPERS                                                     */
+/* ------------------------------------------------------------------ */
+
 const C_LARANJA = "#f97316";
 const C_AZUL = "#7c3aed";
 const C_ROSA = "#f43f5e";
@@ -55,13 +93,43 @@ const C_ROXO = "#c026d3";
 const C_CINZA = "#52525b";
 const C_SLATE = "#64748b";
 
-function cel(id: string, nome: string, tipo: string, cor: string, numero?: string): CelulaPlanta {
-  return { id, nome, tipo, cor, numero };
+function cel(
+  id: string,
+  nome: string,
+  tipo: string,
+  cor: string,
+  numero?: string,
+  rotulo?: string
+): CelulaPlanta {
+  return { id, nome, tipo, cor, numero, rotulo };
 }
 
 function lin(altura: number, ...celulas: CelulaPlanta[]): LinhaPlanta {
   return { altura, celulas };
 }
+
+function quebrarTexto(texto: string, maxChars: number): string[] {
+  const palavras = texto.split(" ");
+  const linhas: string[] = [];
+  let atual = "";
+  for (const palavra of palavras) {
+    const tentativa = atual ? `${atual} ${palavra}` : palavra;
+    if (tentativa.length > maxChars && atual) {
+      linhas.push(atual);
+      atual = palavra;
+    } else {
+      atual = tentativa;
+    }
+  }
+  if (atual) linhas.push(atual);
+  return linhas;
+}
+
+/* ------------------------------------------------------------------ */
+/* PLANTA VETORIZADA DO BLOCO A — 1º PAVIMENTO (salas 300–356)         */
+/* Baseada no quadro de sinalização real do bloco (Reitoria / Turnos / */
+/* Departamentos / Laboratórios), redesenhada no tema escuro do site.  */
+/* ------------------------------------------------------------------ */
 
 const secoesBlocoA: SecaoPlanta[] = [
   // Seção 1 — ala da Reitoria, Turismo, Humanidades e Licenciaturas
@@ -201,6 +269,7 @@ function salasDaSecao(secao: SecaoPlanta): Sala[] {
           tipo: celula.tipo,
           cor: celula.cor,
           numero: celula.numero,
+          andar: "pav1",
         });
       }
     }
@@ -208,7 +277,7 @@ function salasDaSecao(secao: SecaoPlanta): Sala[] {
   return salas;
 }
 
-const salasBlocoA: Sala[] = secoesBlocoA.flatMap(salasDaSecao);
+const salasBlocoAPav1: Sala[] = secoesBlocoA.flatMap(salasDaSecao);
 
 const LEGENDA_BLOCO_A: { tipo: string; cor: string }[] = [
   { tipo: "Coordenações", cor: C_LARANJA },
@@ -224,22 +293,410 @@ const LEGENDA_BLOCO_A: { tipo: string; cor: string }[] = [
   { tipo: "Ambientes diversos", cor: C_CINZA },
 ];
 
-function quebrarTexto(texto: string, maxChars: number): string[] {
-  const palavras = texto.split(" ");
-  const linhas: string[] = [];
-  let atual = "";
-  for (const palavra of palavras) {
-    const tentativa = atual ? `${atual} ${palavra}` : palavra;
-    if (tentativa.length > maxChars && atual) {
-      linhas.push(atual);
-      atual = palavra;
-    } else {
-      atual = tentativa;
-    }
-  }
-  if (atual) linhas.push(atual);
-  return linhas;
+/* ------------------------------------------------------------------ */
+/* PLANTAS VETORIZADAS A PARTIR DAS PLANTAS BAIXAS OFICIAIS            */
+/* Bloco A (subsolo), Bloco C e Bloco D (térreo e mezanino).           */
+/* As coordenadas foram estimadas visualmente a partir das fotos; os   */
+/* ambientes sem identificação na planta ficam como corredor/vazio.    */
+/* Para ajustar, edite x / y / w / h de cada ambiente.                 */
+/* ------------------------------------------------------------------ */
+
+function criarZonas(prefixo: string) {
+  const idDe = (chave: string) => `${prefixo}-${chave}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+  const sala = (
+    codigo: string,
+    alt: string | null,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    tipo = "Sala",
+    cor = C_CINZA
+  ): ZonaPlanta => ({
+    celula: cel(
+      idDe(codigo),
+      alt ? `${codigo} · ${alt}` : codigo,
+      tipo,
+      cor,
+      alt ?? undefined,
+      alt ? `${codigo}\n${alt}` : codigo
+    ),
+    x,
+    y,
+    w,
+    h,
+  });
+
+  const lab = (codigo: string, alt: string | null, x: number, y: number, w: number, h: number) =>
+    sala(codigo, alt, x, y, w, h, "Laboratório", C_ROXO);
+
+  const espaco = (
+    chave: string,
+    nome: string,
+    tipo: string,
+    cor: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    rotulo?: string
+  ): ZonaPlanta => ({
+    celula: cel(idDe(chave), nome, tipo, cor, undefined, rotulo ?? nome),
+    x,
+    y,
+    w,
+    h,
+  });
+
+  const escada = (
+    chave: string,
+    nome: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    seta?: "↑" | "↓"
+  ): ZonaPlanta => ({
+    celula: cel(idDe(chave), nome, "Circulação", C_AMBAR),
+    x,
+    y,
+    w,
+    h,
+    escada: seta ? { seta } : {},
+  });
+
+  return { sala, lab, espaco, escada };
 }
+
+const LEGENDA_PADRAO: { tipo: string; cor: string }[] = [
+  { tipo: "Salas", cor: C_CINZA },
+  { tipo: "Laboratórios", cor: C_ROXO },
+  { tipo: "Escadas", cor: C_AMBAR },
+  { tipo: "Banheiros", cor: C_SLATE },
+];
+
+/* ---------------------------- BLOCO A ------------------------------ */
+
+function plantaASubsolo(): PlantaAndar {
+  const { sala, espaco, escada } = criarZonas("a-sub");
+  return {
+    titulo: "BLOCO A · SUBSOLO",
+    viewBox: [640, 620],
+    corredores: [
+      { x: 34, y: 459, w: 323, h: 33 },
+      { x: 250, y: 300, w: 36, h: 159 },
+      { x: 448, y: 258, w: 104, h: 234 },
+    ],
+    rotulos: [
+      { x: 269, y: 292, texto: "BLOCO D" },
+      { x: 500, y: 390, texto: "BLOCO A", rot: -90 },
+    ],
+    zonas: [
+      sala("A117", "122", 34, 376, 72, 83),
+      sala("A115", "123", 106, 376, 62, 83),
+      sala("A112", "115", 168, 376, 42, 83),
+      sala("A111", "116", 210, 385, 40, 74),
+      sala("A109", "117", 286, 376, 71, 83),
+      sala("A108", "117A", 357, 376, 91, 113),
+      sala("A116", "121", 40, 492, 110, 109),
+      sala("A114", "120", 150, 492, 71, 109),
+      sala("A113", "119", 221, 492, 66, 109),
+      sala("A110", "118", 287, 492, 76, 109),
+      escada("esc-bloco-d", "Escada de ligação com o Bloco D", 253, 300, 32, 76),
+      espaco("banheiros", "Banheiros", "Serviço", C_SLATE, 470, 236, 100, 40),
+      {
+        celula: cel("a-sub-rotunda", "Rotunda (anfiteatro)", "Área comum", C_TEAL),
+        x: 405,
+        y: 40,
+        w: 190,
+        h: 190,
+        rotunda: true,
+      },
+    ],
+    legenda: [
+      { tipo: "Salas", cor: C_CINZA },
+      { tipo: "Escada", cor: C_AMBAR },
+      { tipo: "Banheiros", cor: C_SLATE },
+      { tipo: "Rotunda", cor: C_TEAL },
+    ],
+  };
+}
+
+/* ---------------------------- BLOCO C ------------------------------ */
+
+function plantaCTerreo(): PlantaAndar {
+  const { sala, lab, espaco, escada } = criarZonas("c-ter");
+  return {
+    titulo: "BLOCO C · TÉRREO",
+    viewBox: [640, 560],
+    contorno: { x: 25, y: 44, w: 518, h: 480 },
+    corredores: [
+      { x: 142, y: 58, w: 23, h: 448 },
+      { x: 430, y: 58, w: 38, h: 448 },
+      { x: 165, y: 326, w: 265, h: 12 },
+    ],
+    vazios: [
+      { x: 292, y: 58, w: 60, h: 268 },
+      { x: 352, y: 146, w: 78, h: 102 },
+    ],
+    anfiteatros: [{ cx: 603, cy: 320, lado: "dir" }],
+    zonas: [
+      // Coluna esquerda
+      sala("C104", "503", 60, 58, 82, 88),
+      sala("C103", "502", 60, 146, 82, 96),
+      sala("C102", "501", 60, 242, 82, 96),
+      sala("C101", "500", 60, 338, 82, 96),
+      espaco("banheiros-esq", "Banheiros", "Serviço", C_SLATE, 60, 434, 82, 72),
+      // Miolo esquerdo
+      sala("C105", "504", 165, 58, 127, 88),
+      sala("C106", "505", 165, 146, 127, 102),
+      sala("C107", "506", 165, 248, 64, 90),
+      sala("C108", "507", 229, 248, 63, 90),
+      sala("C109", "508A", 165, 338, 64, 76),
+      sala("C110", "508B", 229, 338, 63, 76),
+      sala("C111", "509", 165, 414, 127, 92),
+      // Miolo direito
+      sala("C131", null, 352, 58, 78, 46),
+      sala("C130", null, 352, 104, 78, 42),
+      sala("C122", null, 352, 248, 78, 36),
+      sala("C121", null, 352, 284, 78, 36),
+      sala("C117", null, 352, 370, 78, 34),
+      // Coluna direita
+      sala("C132", null, 468, 58, 67, 62),
+      lab("C133", "LAB12", 468, 170, 67, 66),
+      lab("C134", "LAB11", 468, 236, 67, 96),
+      sala("C135", null, 468, 332, 67, 78),
+      espaco("banheiros-dir", "Banheiros", "Serviço", C_SLATE, 468, 434, 67, 72),
+      // Escadas
+      escada("esc-te", "Escada superior esquerda", 142, 58, 23, 62),
+      escada("esc-be", "Escada inferior esquerda", 142, 440, 23, 66),
+      escada("esc-td", "Escada superior direita", 430, 58, 38, 62),
+      escada("esc-bd", "Escada inferior direita", 430, 440, 38, 66),
+    ],
+    legenda: LEGENDA_PADRAO,
+  };
+}
+
+function plantaCMezanino(): PlantaAndar {
+  const { sala, lab, escada } = criarZonas("c-mez");
+  return {
+    titulo: "BLOCO C · MEZANINO",
+    viewBox: [640, 590],
+    contorno: { x: 25, y: 44, w: 518, h: 526 },
+    corredores: [
+      { x: 142, y: 58, w: 21, h: 432 },
+      { x: 163, y: 469, w: 305, h: 21 },
+      { x: 430, y: 58, w: 38, h: 432 },
+    ],
+    vazios: [
+      { x: 231, y: 160, w: 55, h: 105 },
+      { x: 225, y: 265, w: 61, h: 103 },
+      { x: 231, y: 368, w: 55, h: 101 },
+      { x: 286, y: 58, w: 66, h: 411 },
+    ],
+    anfiteatros: [{ cx: 603, cy: 346, lado: "dir" }],
+    zonas: [
+      // Coluna esquerda
+      sala("C205", "514", 60, 58, 82, 102),
+      sala("C204", "513", 60, 160, 82, 105),
+      sala("C203", "512", 60, 265, 82, 103),
+      sala("C202", "511", 60, 368, 82, 101),
+      sala("C201", "510", 60, 469, 82, 93),
+      // Miolo esquerdo
+      sala("C206", "518", 163, 58, 123, 102),
+      sala("C207", "517", 163, 160, 68, 105),
+      sala("C208", "516", 163, 265, 62, 103),
+      sala("C209", "515", 163, 368, 68, 101),
+      // Laboratórios do miolo direito
+      lab("C217", "LAB13", 352, 58, 78, 102),
+      lab("C216", "LAB14", 352, 160, 78, 105),
+      lab("C215", "LAB15", 352, 265, 78, 103),
+      lab("C214", "LAB16", 352, 368, 78, 101),
+      // Coluna direita
+      lab("C218", "LAB1", 468, 58, 67, 102),
+      lab("C219", "LAB2", 468, 160, 67, 105),
+      lab("C220", "LAB3", 468, 265, 67, 103),
+      lab("C221", "LAB4", 468, 368, 67, 101),
+      lab("C222", "LAB5", 468, 469, 67, 93),
+      // Fileira inferior
+      lab("C210", "LAB9", 163, 490, 66, 72),
+      lab("C211", "LAB8", 229, 490, 66, 72),
+      lab("C212", "LAB7", 295, 490, 66, 72),
+      lab("C213", "LAB6", 361, 490, 69, 72),
+      // Escadas
+      escada("esc-te", "Escada superior esquerda", 142, 58, 21, 52),
+      escada("esc-be", "Escada inferior esquerda", 142, 490, 21, 72),
+      escada("esc-td", "Escada superior direita", 430, 58, 38, 52),
+      escada("esc-bd", "Escada inferior direita", 430, 490, 38, 72),
+    ],
+    legenda: [
+      { tipo: "Salas", cor: C_CINZA },
+      { tipo: "Laboratórios", cor: C_ROXO },
+      { tipo: "Escadas", cor: C_AMBAR },
+    ],
+  };
+}
+
+/* ---------------------------- BLOCO D ------------------------------ */
+
+function plantaDTerreo(): PlantaAndar {
+  const { sala, espaco, escada } = criarZonas("d-ter");
+  return {
+    titulo: "BLOCO D · TÉRREO",
+    viewBox: [640, 540],
+    contorno: { x: 100, y: 44, w: 448, h: 460 },
+    corredores: [
+      { x: 158, y: 68, w: 32, h: 417 },
+      { x: 450, y: 85, w: 35, h: 400 },
+      { x: 190, y: 135, w: 260, h: 15 },
+      { x: 190, y: 225, w: 260, h: 15 },
+      { x: 190, y: 330, w: 260, h: 10 },
+    ],
+    anfiteatros: [
+      { cx: 40, cy: 310, lado: "esq" },
+      { cx: 608, cy: 310, lado: "dir" },
+    ],
+    zonas: [
+      // Bloco superior
+      sala("D113", "603", 190, 68, 72, 67),
+      sala("D114", "604", 262, 68, 103, 67),
+      sala("D115", "605", 367, 68, 83, 67),
+      sala("D116", "606", 485, 85, 45, 40),
+      sala("D109", "617", 190, 150, 88, 75),
+      sala("D108", "615", 278, 150, 72, 75),
+      sala("D107", "613", 350, 150, 100, 75),
+      sala("D117", "607", 485, 140, 45, 100),
+      // Coluna esquerda
+      sala("D112", "602", 102, 150, 78, 85),
+      sala("D111", "601", 102, 245, 78, 80),
+      // Miolo
+      sala("D103", "618", 190, 240, 55, 90),
+      sala("D104", "616", 245, 240, 60, 90),
+      sala("D105", "614", 305, 240, 70, 90),
+      sala("D106", "612", 375, 240, 75, 90),
+      sala("D118", "608", 485, 245, 45, 50),
+      sala("D119", "609", 485, 295, 45, 55),
+      // Fileira inferior
+      sala("D102", "619", 190, 340, 95, 70),
+      sala("D120", "611", 335, 340, 115, 70),
+      sala("D101", "620", 190, 415, 45, 65),
+      espaco(
+        "sala-professores",
+        "Sala dos Professores da DEL",
+        "Sala dos Professores",
+        C_VIOLETA,
+        235,
+        415,
+        150,
+        65,
+        "Sala dos Professores\nda DEL"
+      ),
+      sala("D121", "610", 385, 415, 65, 65),
+      // Serviços
+      espaco("banheiros-esq", "Banheiros (esquerda)", "Serviço", C_SLATE, 102, 70, 56, 75, "Banheiros"),
+      espaco("banheiros-dir", "Banheiros (direita)", "Serviço", C_SLATE, 482, 370, 48, 70, "Banheiros"),
+      // Escadas
+      escada("esc-te", "Escada superior esquerda", 158, 85, 32, 50),
+      escada("esc-td", "Escada superior direita", 455, 85, 30, 45),
+      escada("esc-be", "Escada inferior esquerda", 158, 455, 32, 30),
+      escada("esc-bd", "Escada inferior direita", 452, 440, 30, 45),
+    ],
+    legenda: [
+      { tipo: "Salas", cor: C_CINZA },
+      { tipo: "Sala dos Professores", cor: C_VIOLETA },
+      { tipo: "Escadas", cor: C_AMBAR },
+      { tipo: "Banheiros", cor: C_SLATE },
+    ],
+  };
+}
+
+function plantaDMezanino(): PlantaAndar {
+  const { sala, escada } = criarZonas("d-mez");
+  return {
+    titulo: "BLOCO D · MEZANINO",
+    viewBox: [640, 540],
+    contorno: { x: 100, y: 44, w: 448, h: 480 },
+    corredores: [
+      { x: 160, y: 73, w: 35, h: 434 },
+      { x: 455, y: 73, w: 30, h: 434 },
+      { x: 160, y: 140, w: 325, h: 25 },
+      { x: 160, y: 443, w: 325, h: 17 },
+    ],
+    vazios: [{ x: 195, y: 260, w: 192, h: 95 }],
+    anfiteatros: [
+      { cx: 40, cy: 345, lado: "esq" },
+      { cx: 608, cy: 345, lado: "dir" },
+    ],
+    zonas: [
+      // Fileira superior
+      sala("D208", "644A", 108, 73, 52, 67),
+      sala("644B", null, 108, 140, 52, 20),
+      sala("D209", "643", 195, 73, 65, 67),
+      sala("D211", "642", 260, 73, 62, 67),
+      sala("D213", "641", 322, 73, 65, 67),
+      sala("D215", "640", 387, 73, 68, 67),
+      sala("D217", "639", 485, 73, 55, 67),
+      // Coluna esquerda
+      sala("D207", "645", 108, 160, 52, 115),
+      sala("D206", "646", 108, 355, 52, 85),
+      sala("D201", "647", 108, 445, 52, 62),
+      // Segunda fileira
+      sala("D210", "647", 195, 165, 65, 95),
+      sala("D212", "D1", 260, 165, 62, 95),
+      sala("D214", "D2", 322, 165, 65, 95),
+      sala("D216", "D3", 387, 165, 68, 95),
+      sala("D220", "630", 387, 260, 68, 95),
+      // Terceira fileira
+      sala("D205", "D7", 195, 355, 65, 88),
+      sala("D204", "D8", 260, 355, 62, 88),
+      sala("D223", "D5", 322, 355, 65, 88),
+      sala("D222", "D4", 387, 355, 68, 88),
+      // Fileira inferior
+      sala("D202", "D10", 195, 460, 65, 47),
+      sala("D203", "D9", 260, 460, 62, 47),
+      sala("D224", "D6", 322, 460, 65, 47),
+      sala("D225", null, 387, 460, 68, 47),
+      // Coluna direita
+      sala("D218", "638", 485, 165, 55, 75),
+      sala("D219", "637", 485, 240, 55, 115),
+      sala("D221", "636", 485, 355, 55, 88),
+      sala("D226", "635", 485, 447, 55, 60),
+      // Escadas
+      escada("esc-te", "Escada superior esquerda", 160, 73, 35, 52),
+      escada("esc-td", "Escada superior direita", 455, 73, 30, 52),
+      escada("esc-be", "Escada inferior esquerda", 160, 460, 35, 47),
+      escada("esc-bd", "Escada inferior direita", 455, 460, 30, 47),
+    ],
+    legenda: [
+      { tipo: "Salas", cor: C_CINZA },
+      { tipo: "Escadas", cor: C_AMBAR },
+    ],
+  };
+}
+
+const plantasAndar: Record<string, PlantaAndar> = {
+  "bloco-a:subsolo": plantaASubsolo(),
+  "bloco-c:terreo": plantaCTerreo(),
+  "bloco-c:mezanino": plantaCMezanino(),
+  "bloco-d:terreo": plantaDTerreo(),
+  "bloco-d:mezanino": plantaDMezanino(),
+};
+
+function salasDaPlanta(chave: string, andar: AndarId): Sala[] {
+  return plantasAndar[chave].zonas.map(({ celula }) => ({
+    id: celula.id,
+    nome: celula.nome,
+    tipo: celula.tipo,
+    cor: celula.cor,
+    numero: celula.numero,
+    andar,
+  }));
+}
+
+/* ------------------------------------------------------------------ */
+/* COMPONENTES SVG                                                     */
+/* ------------------------------------------------------------------ */
 
 function CelulaSVG({
   x,
@@ -258,9 +715,9 @@ function CelulaSVG({
   ativa: boolean;
   onClick: () => void;
 }) {
-  const fontSize = celula.tipo === "Ambiente" ? 10 : 8.5;
+  const fontSize = celula.rotulo ? 9 : celula.tipo === "Ambiente" ? 10 : 8.5;
   const maxChars = Math.max(10, Math.floor(width / 5.3));
-  const linhasTexto = quebrarTexto(celula.nome, maxChars).slice(0, 3);
+  const linhasTexto = (celula.rotulo ? celula.rotulo.split("\n") : quebrarTexto(celula.nome, maxChars)).slice(0, 3);
   const lineHeight = fontSize + 2.6;
   const blocoAltura = (linhasTexto.length - 1) * lineHeight;
   const yTexto = y + height / 2 - blocoAltura / 2 + fontSize / 3;
@@ -298,59 +755,231 @@ function CelulaSVG({
   );
 }
 
-function renderColuna(
-  linhas: LinhaPlanta[],
-  x: number,
-  yInicio: number,
-  largura: number,
-  salaAtivaId: string | undefined,
-  onSelecionar: (id: string) => void
-) {
-  let yAtual = yInicio;
-  return linhas.map((linha, li) => {
-    const yLinha = yAtual;
-    yAtual += linha.altura;
+function EscadaSVG({
+  zona,
+  ativa,
+  onClick,
+}: {
+  zona: ZonaPlanta;
+  ativa: boolean;
+  onClick: () => void;
+}) {
+  const { celula, x, y, w, h, escada } = zona;
+  const degraus = Math.floor(h / 8);
+  return (
+    <g onClick={onClick} className="cursor-pointer group">
+      <title>{celula.nome}</title>
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        rx="4"
+        fill={ativa ? "#1c1c22" : "#18181b"}
+        stroke={ativa ? celula.cor : "#3f3f46"}
+        strokeWidth={ativa ? 1.75 : 1}
+        className="transition-all duration-300 group-hover:fill-neon/10 group-hover:stroke-neon"
+      />
+      {Array.from({ length: degraus - 1 }, (_, i) => (
+        <line
+          key={i}
+          x1={x + 4}
+          x2={x + w - 4}
+          y1={y + (i + 1) * 8}
+          y2={y + (i + 1) * 8}
+          stroke={celula.cor}
+          strokeWidth="1"
+          opacity={ativa ? 0.9 : 0.45}
+          className="pointer-events-none"
+        />
+      ))}
+      {escada?.seta && (
+        <text
+          x={x + w / 2}
+          y={y + 14}
+          fontSize="13"
+          fontWeight="bold"
+          textAnchor="middle"
+          fill="#e4e4e7"
+          className="pointer-events-none select-none"
+        >
+          {escada.seta}
+        </text>
+      )}
+    </g>
+  );
+}
 
-    if (linha.celulas.length === 1) {
-      const celula = linha.celulas[0];
-      return (
-        <CelulaSVG
-          key={celula.id}
-          x={x}
-          y={yLinha}
-          width={largura}
-          height={linha.altura}
-          celula={celula}
-          ativa={salaAtivaId === celula.id}
-          onClick={() => onSelecionar(celula.id)}
+function RotundaSVG({
+  zona,
+  ativa,
+  onClick,
+}: {
+  zona: ZonaPlanta;
+  ativa: boolean;
+  onClick: () => void;
+}) {
+  const { celula, x, y, w } = zona;
+  const r = w / 2;
+  const cx = x + r;
+  const cy = y + r;
+  return (
+    <g onClick={onClick} className="cursor-pointer group">
+      <title>{celula.nome}</title>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill={ativa ? "#1c1c22" : "#18181b"}
+        stroke={ativa ? celula.cor : "#3f3f46"}
+        strokeWidth={ativa ? 1.75 : 1}
+        className="transition-all duration-300 group-hover:fill-neon/10 group-hover:stroke-neon"
+      />
+      {[0.84, 0.55, 0.23].map((fator) => (
+        <circle
+          key={fator}
+          cx={cx}
+          cy={cy}
+          r={r * fator}
+          fill="none"
+          stroke={celula.cor}
+          strokeWidth="1"
+          opacity={ativa ? 0.9 : 0.4}
+          className="pointer-events-none"
         />
-      );
-    }
+      ))}
+    </g>
+  );
+}
 
-    const metade = (largura - 6) / 2;
-    return (
-      <g key={`par-${li}`}>
-        <CelulaSVG
-          x={x}
-          y={yLinha}
-          width={metade}
-          height={linha.altura}
-          celula={linha.celulas[0]}
-          ativa={salaAtivaId === linha.celulas[0].id}
-          onClick={() => onSelecionar(linha.celulas[0].id)}
-        />
-        <CelulaSVG
-          x={x + metade + 6}
-          y={yLinha}
-          width={metade}
-          height={linha.altura}
-          celula={linha.celulas[1]}
-          ativa={salaAtivaId === linha.celulas[1].id}
-          onClick={() => onSelecionar(linha.celulas[1].id)}
-        />
-      </g>
-    );
-  });
+function VazioSVG({ x, y, w, h }: Retangulo) {
+  return (
+    <g className="pointer-events-none">
+      <rect x={x} y={y} width={w} height={h} fill="#0c0c0f" stroke="#27272a" strokeDasharray="3 3" />
+      <line x1={x} y1={y} x2={x + w} y2={y + h} stroke="#27272a" />
+      <line x1={x + w} y1={y} x2={x} y2={y + h} stroke="#27272a" />
+    </g>
+  );
+}
+
+function AnfiteatroSVG({ cx, cy, lado }: { cx: number; cy: number; lado: "esq" | "dir" }) {
+  // "dir": arcos abertos para a direita (curvam para a esquerda); "esq": o inverso.
+  const sweep = lado === "dir" ? 0 : 1;
+  return (
+    <g className="pointer-events-none" fill="none" stroke="#3f3f46" strokeWidth="1.5">
+      {[22, 40, 58].map((r) => (
+        <path key={r} d={`M ${cx} ${cy - r} A ${r} ${r} 0 0 ${sweep} ${cx} ${cy + r}`} />
+      ))}
+      <circle cx={cx} cy={cy} r="8" stroke="#27272a" />
+      <text x={cx} y={cy + 74} fontSize="7" textAnchor="middle" fill="#52525b" stroke="none" letterSpacing="1">
+        ANFITEATRO
+      </text>
+    </g>
+  );
+}
+
+function Legenda({ itens }: { itens: { tipo: string; cor: string }[] }) {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-2 text-[10px] text-muted-foreground">
+      {itens.map((item) => (
+        <span key={item.tipo} className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.cor }} />
+          {item.tipo}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Renderizador único das plantas de andar (Blocos A-subsolo, C e D). */
+function PlantaAndarSVG({
+  planta,
+  salaAtivaId,
+  onSelecionar,
+}: {
+  planta: PlantaAndar;
+  salaAtivaId?: string;
+  onSelecionar: (id: string) => void;
+}) {
+  const [largura, altura] = planta.viewBox;
+  return (
+    <div className="flex w-full flex-col items-center gap-4">
+      <svg
+        viewBox={`0 0 ${largura} ${altura}`}
+        className="h-full max-h-[600px] w-full drop-shadow-lg rounded-2xl"
+        xmlns="http://www.w3.org/2000/svg"
+        fontFamily="Arial, Helvetica, sans-serif"
+      >
+        <rect width={largura} height={altura} fill="#09090b" rx="16" />
+        <text x={largura - 20} y="26" fontSize="10" fontWeight="bold" textAnchor="end" fill="#71717a" letterSpacing="1">
+          {planta.titulo}
+        </text>
+
+        {planta.contorno && (
+          <rect
+            x={planta.contorno.x}
+            y={planta.contorno.y}
+            width={planta.contorno.w}
+            height={planta.contorno.h}
+            rx="10"
+            fill="none"
+            stroke="#27272a"
+            strokeWidth="2"
+          />
+        )}
+
+        {planta.corredores?.map((c, i) => (
+          <rect key={`corredor-${i}`} x={c.x} y={c.y} width={c.w} height={c.h} fill="#101013" />
+        ))}
+
+        {planta.vazios?.map((v, i) => (
+          <VazioSVG key={`vazio-${i}`} {...v} />
+        ))}
+
+        {planta.anfiteatros?.map((a, i) => (
+          <AnfiteatroSVG key={`anfiteatro-${i}`} {...a} />
+        ))}
+
+        {planta.zonas.map((zona) => {
+          const ativa = salaAtivaId === zona.celula.id;
+          const aoClicar = () => onSelecionar(zona.celula.id);
+          if (zona.rotunda) return <RotundaSVG key={zona.celula.id} zona={zona} ativa={ativa} onClick={aoClicar} />;
+          if (zona.escada) return <EscadaSVG key={zona.celula.id} zona={zona} ativa={ativa} onClick={aoClicar} />;
+          return (
+            <CelulaSVG
+              key={zona.celula.id}
+              x={zona.x}
+              y={zona.y}
+              width={zona.w}
+              height={zona.h}
+              celula={zona.celula}
+              ativa={ativa}
+              onClick={aoClicar}
+            />
+          );
+        })}
+
+        {planta.rotulos?.map((r, i) => (
+          <text
+            key={`rotulo-${i}`}
+            x={r.x}
+            y={r.y}
+            fontSize="8.5"
+            fontWeight="bold"
+            textAnchor="middle"
+            fill="#71717a"
+            letterSpacing="1"
+            transform={r.rot ? `rotate(${r.rot} ${r.x} ${r.y})` : undefined}
+            className="pointer-events-none select-none"
+          >
+            {r.texto}
+          </text>
+        ))}
+      </svg>
+
+      <Legenda itens={planta.legenda} />
+    </div>
+  );
 }
 
 function PlantaBlocoA({
@@ -444,264 +1073,90 @@ function PlantaBlocoA({
         })}
       </svg>
 
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-2 text-[10px] text-muted-foreground">
-        {LEGENDA_BLOCO_A.map((item) => (
-          <span key={item.tipo} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.cor }} />
-            {item.tipo}
-          </span>
-        ))}
-      </div>
+      <Legenda itens={LEGENDA_BLOCO_A} />
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* BLOCO C — 2 ANDARES                                                 */
-/* 2º andar vetorizado a partir do desenho à mão (planta em "U" com    */
-/* duas alas, corredor em U, escadas de entrada, saídas e saguão).     */
-/* Os nomes/números das salas são provisórios (exceto a sala 213):     */
-/* edite o campo `nome` de cada sala em `zonasBlocoC2` quando tiver    */
-/* a identificação real.                                               */
-/* ------------------------------------------------------------------ */
-
-type ZonaPlanta = {
-  celula: CelulaPlanta;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  escada?: { seta?: "↑" | "↓" };
-};
-
-function colunaSalas(
-  idPrefixo: string,
-  nomeBase: string,
+function renderColuna(
+  linhas: LinhaPlanta[],
   x: number,
-  y0: number,
-  w: number,
-  h: number,
-  n: number
-): ZonaPlanta[] {
-  return Array.from({ length: n }, (_, k) => ({
-    celula: cel(`${idPrefixo}-${k + 1}`, `${nomeBase} ${k + 1}`, "Sala", C_CINZA),
-    x,
-    y: y0 + k * h,
-    w,
-    h,
-  }));
-}
+  yInicio: number,
+  largura: number,
+  salaAtivaId: string | undefined,
+  onSelecionar: (id: string) => void
+) {
+  let yAtual = yInicio;
+  return linhas.map((linha, li) => {
+    const yLinha = yAtual;
+    yAtual += linha.altura;
 
-function linhaSalas(
-  idPrefixo: string,
-  nomeBase: string,
-  x0: number,
-  y: number,
-  w: number,
-  h: number,
-  n: number
-): ZonaPlanta[] {
-  return Array.from({ length: n }, (_, k) => ({
-    celula: cel(`${idPrefixo}-${k + 1}`, `${nomeBase} ${k + 1}`, "Sala", C_CINZA),
-    x: x0 + k * w,
-    y,
-    w,
-    h,
-  }));
-}
-
-const zonasBlocoC2: ZonaPlanta[] = [
-  // Ala esquerda (externa e interna)
-  ...colunaSalas("c2-ee", "Ala esquerda externa", 20, 195, 93, 61, 5),
-  ...colunaSalas("c2-ei", "Ala esquerda interna", 155, 110, 108, 55, 5),
-  // Ala direita (interna e externa — a última sala da externa é a 213)
-  ...colunaSalas("c2-di", "Ala direita interna", 377, 110, 108, 55, 5),
-  ...colunaSalas("c2-de", "Ala direita externa", 527, 195, 93, 61, 5).map((z, i, arr) =>
-    i === arr.length - 1 ? { ...z, celula: cel("c2-213", "Sala 213", "Sala", C_CINZA, "213") } : z
-  ),
-  // Salas frontais, voltadas para o saguão
-  ...linhaSalas("c2-f", "Sala frontal", 205, 425, 57.5, 75, 4),
-  // Saídas (topo)
-  { celula: cel("c2-saida-e", "Saída esquerda", "Saída", C_VERDE), x: 78, y: 40, w: 127, h: 70 },
-  { celula: cel("c2-saida-d", "Saída direita", "Saída", C_VERDE), x: 435, y: 40, w: 127, h: 70 },
-  // Escadas das saídas (topo)
-  { celula: cel("c2-esc-saida-e", "Escada da saída esquerda", "Circulação", C_AMBAR), x: 78, y: 110, w: 35, h: 70, escada: {} },
-  { celula: cel("c2-esc-saida-d", "Escada da saída direita", "Circulação", C_AMBAR), x: 527, y: 110, w: 35, h: 70, escada: {} },
-  // Escadas de entrada (base)
-  { celula: cel("c2-esc-e-sobe", "Escada de entrada esquerda — subida", "Circulação", C_AMBAR), x: 113, y: 425, w: 46, h: 75, escada: { seta: "↑" } },
-  { celula: cel("c2-esc-e-desce", "Escada de entrada esquerda — descida", "Circulação", C_AMBAR), x: 159, y: 425, w: 46, h: 75, escada: { seta: "↓" } },
-  { celula: cel("c2-esc-d-desce", "Escada de entrada direita — descida", "Circulação", C_AMBAR), x: 435, y: 425, w: 46, h: 75, escada: { seta: "↓" } },
-  { celula: cel("c2-esc-d-sobe", "Escada de entrada direita — subida", "Circulação", C_AMBAR), x: 481, y: 425, w: 46, h: 75, escada: { seta: "↑" } },
-  // Saguão
-  { celula: cel("c2-saguao", "Saguão", "Área comum", C_TEAL), x: 205, y: 514, w: 230, h: 40 },
-];
-
-const salasBlocoC2: Sala[] = zonasBlocoC2.map(({ celula }) => ({
-  id: celula.id,
-  nome: celula.nome,
-  tipo: celula.tipo,
-  cor: celula.cor,
-  numero: celula.numero,
-  andar: 2,
-}));
-
-const LEGENDA_BLOCO_C2: { tipo: string; cor: string }[] = [
-  { tipo: "Salas", cor: C_CINZA },
-  { tipo: "Escadas", cor: C_AMBAR },
-  { tipo: "Saídas", cor: C_VERDE },
-  { tipo: "Saguão", cor: C_TEAL },
-];
-
-function EscadaSVG({
-  zona,
-  ativa,
-  onClick,
-}: {
-  zona: ZonaPlanta;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  const { celula, x, y, w, h, escada } = zona;
-  const degraus = Math.floor(h / 8);
-  return (
-    <g onClick={onClick} className="cursor-pointer group">
-      <title>{celula.nome}</title>
-      <rect
-        x={x}
-        y={y}
-        width={w}
-        height={h}
-        rx="4"
-        fill={ativa ? "#1c1c22" : "#18181b"}
-        stroke={ativa ? celula.cor : "#3f3f46"}
-        strokeWidth={ativa ? 1.75 : 1}
-        className="transition-all duration-300 group-hover:fill-neon/10 group-hover:stroke-neon"
-      />
-      {Array.from({ length: degraus - 1 }, (_, i) => (
-        <line
-          key={i}
-          x1={x + 4}
-          x2={x + w - 4}
-          y1={y + (i + 1) * 8}
-          y2={y + (i + 1) * 8}
-          stroke={celula.cor}
-          strokeWidth="1"
-          opacity={ativa ? 0.9 : 0.45}
-          className="pointer-events-none"
+    if (linha.celulas.length === 1) {
+      const celula = linha.celulas[0];
+      return (
+        <CelulaSVG
+          key={celula.id}
+          x={x}
+          y={yLinha}
+          width={largura}
+          height={linha.altura}
+          celula={celula}
+          ativa={salaAtivaId === celula.id}
+          onClick={() => onSelecionar(celula.id)}
         />
-      ))}
-      {escada?.seta && (
-        <text
-          x={x + w / 2}
-          y={y + 14}
-          fontSize="13"
-          fontWeight="bold"
-          textAnchor="middle"
-          fill="#e4e4e7"
-          className="pointer-events-none select-none"
-        >
-          {escada.seta}
-        </text>
-      )}
-    </g>
-  );
-}
+      );
+    }
 
-function PlantaBlocoC2({
-  salaAtivaId,
-  onSelecionar,
-}: {
-  salaAtivaId?: string;
-  onSelecionar: (id: string) => void;
-}) {
-  return (
-    <div className="flex w-full flex-col items-center gap-4">
-      <svg
-        viewBox="0 0 640 580"
-        className="h-full max-h-[600px] w-full drop-shadow-lg rounded-2xl"
-        xmlns="http://www.w3.org/2000/svg"
-        fontFamily="Arial, Helvetica, sans-serif"
-      >
-        <rect width="640" height="580" fill="#09090b" rx="16" />
-        <text x="620" y="26" fontSize="10" fontWeight="bold" textAnchor="end" fill="#71717a" letterSpacing="1">
-          2º ANDAR
-        </text>
-
-        {/* Corredor em U */}
-        <path
-          d="M113,110 L155,110 L155,385 L485,385 L485,110 L527,110 L527,425 L113,425 Z"
-          fill="#101013"
-          stroke="#27272a"
-          strokeDasharray="4 4"
+    const metade = (largura - 6) / 2;
+    return (
+      <g key={`par-${li}`}>
+        <CelulaSVG
+          x={x}
+          y={yLinha}
+          width={metade}
+          height={linha.altura}
+          celula={linha.celulas[0]}
+          ativa={salaAtivaId === linha.celulas[0].id}
+          onClick={() => onSelecionar(linha.celulas[0].id)}
         />
-
-        {zonasBlocoC2.map((zona) =>
-          zona.escada ? (
-            <EscadaSVG
-              key={zona.celula.id}
-              zona={zona}
-              ativa={salaAtivaId === zona.celula.id}
-              onClick={() => onSelecionar(zona.celula.id)}
-            />
-          ) : (
-            <CelulaSVG
-              key={zona.celula.id}
-              x={zona.x}
-              y={zona.y}
-              width={zona.w}
-              height={zona.h}
-              celula={zona.celula}
-              ativa={salaAtivaId === zona.celula.id}
-              onClick={() => onSelecionar(zona.celula.id)}
-            />
-          )
-        )}
-
-        {/* Rótulos de entrada */}
-        <text x="159" y="516" fontSize="8.5" fontWeight="bold" textAnchor="middle" fill="#71717a" letterSpacing="1">
-          ENTRADA
-        </text>
-        <text x="481" y="516" fontSize="8.5" fontWeight="bold" textAnchor="middle" fill="#71717a" letterSpacing="1">
-          ENTRADA
-        </text>
-
-        <line x1="20" y1="568" x2="620" y2="568" stroke="#27272a" strokeDasharray="4 4" />
-      </svg>
-
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-2 text-[10px] text-muted-foreground">
-        {LEGENDA_BLOCO_C2.map((item) => (
-          <span key={item.tipo} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.cor }} />
-            {item.tipo}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
+        <CelulaSVG
+          x={x + metade + 6}
+          y={yLinha}
+          width={metade}
+          height={linha.altura}
+          celula={linha.celulas[1]}
+          ativa={salaAtivaId === linha.celulas[1].id}
+          onClick={() => onSelecionar(linha.celulas[1].id)}
+        />
+      </g>
+    );
+  });
 }
 
 function SeletorAndar({
+  andares,
   andar,
   onChange,
 }: {
-  andar: 1 | 2;
-  onChange: (a: 1 | 2) => void;
+  andares: Andar[];
+  andar: AndarId | null;
+  onChange: (a: AndarId) => void;
 }) {
   return (
-    <div className="mb-4 inline-flex gap-2" role="group" aria-label="Selecionar andar">
-      {([1, 2] as const).map((a) => (
+    <div className="mb-4 inline-flex flex-wrap gap-2" role="group" aria-label="Selecionar andar">
+      {andares.map((a) => (
         <button
-          key={a}
+          key={a.id}
           type="button"
-          aria-pressed={andar === a}
-          onClick={() => onChange(a)}
+          aria-pressed={andar === a.id}
+          onClick={() => onChange(a.id)}
           className={`rounded-full border px-4 py-1.5 text-[12px] font-medium transition-all duration-300 cursor-pointer ${
-            andar === a
+            andar === a.id
               ? "border-neon bg-neon/10 text-neon"
               : "border-border text-muted-foreground hover:border-neon/60 hover:text-foreground"
           }`}
         >
-          {a}º andar
+          {a.rotulo}
         </button>
       ))}
     </div>
@@ -775,25 +1230,147 @@ function BlocoMapa({
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* DADOS DOS BLOCOS                                                    */
+/* ------------------------------------------------------------------ */
+
+const blocosCampus: Bloco[] = [
+  {
+    id: "bloco-a",
+    sigla: "Bloco A",
+    nome: "Bloco A - Licenciaturas",
+    descricao:
+      "Reitoria, coordenadorias de curso, departamentos e laboratórios distribuídos pelas alas do bloco (salas 115 a 123 no subsolo, 200–211 no intermediário e 300–356 no 1º pavimento).",
+    andares: [
+      { id: "subsolo", rotulo: "Subsolo" },
+      { id: "pav1", rotulo: "1º pavimento" },
+    ],
+    andarPadrao: "pav1",
+    salas: [...salasBlocoAPav1, ...salasDaPlanta("bloco-a:subsolo", "subsolo")],
+  },
+  {
+    id: "bloco-b",
+    sigla: "Bloco B",
+    nome: "Bloco B - Em Construção",
+    descricao: "Bloco ainda não construído, conforme a sinalização oficial do campus.",
+    salas: [{ id: "b-construcao", nome: "Bloco em construção", tipo: "Previsão de expansão do campus" }],
+  },
+  {
+    id: "bloco-c",
+    sigla: "Bloco C",
+    nome: "Bloco C - Eletrônica e Sistemas",
+    descricao:
+      "Salas de aula (500 a 518) e laboratórios (LAB1 a LAB16) de eletrônica e sistemas, distribuídos em 2 andares: térreo e mezanino.",
+    andares: [
+      { id: "terreo", rotulo: "Térreo" },
+      { id: "mezanino", rotulo: "Mezanino" },
+    ],
+    andarPadrao: "terreo",
+    salas: [...salasDaPlanta("bloco-c:terreo", "terreo"), ...salasDaPlanta("bloco-c:mezanino", "mezanino")],
+  },
+  {
+    id: "bloco-d",
+    sigla: "Bloco D",
+    nome: "Bloco D - Automações",
+    descricao:
+      "Laboratórios de automação industrial, robótica e pneumática, com salas 601 a 647 e D1 a D10, distribuídas em 2 andares: térreo e mezanino. Abriga a Sala dos Professores da DEL.",
+    andares: [
+      { id: "terreo", rotulo: "Térreo" },
+      { id: "mezanino", rotulo: "Mezanino" },
+    ],
+    andarPadrao: "terreo",
+    salas: [...salasDaPlanta("bloco-d:terreo", "terreo"), ...salasDaPlanta("bloco-d:mezanino", "mezanino")],
+  },
+  {
+    id: "bloco-e",
+    sigla: "Bloco E",
+    nome: "Bloco E - Mecânicas",
+    descricao: "Oficinas, laboratórios de mecânica dos fluidos e resistência dos materiais (salas 700 a 713).",
+    salas: [
+      { id: "e1", nome: "Oficina Mecânica", tipo: "Prática" },
+      { id: "e2", nome: "Lab de Ensaios de Materiais", tipo: "Pesquisa" },
+    ],
+  },
+  {
+    id: "bloco-f",
+    sigla: "Bloco F",
+    nome: "Bloco F - Diretoria",
+    descricao: "Diretoria-Geral, gabinetes da direção e secretarias administrativas (salas 800 a 815).",
+    salas: [
+      { id: "f1", nome: "Gabinete da Diretoria-Geral", tipo: "Gestão" },
+      { id: "f2", nome: "Secretaria Administrativa", tipo: "Administrativo" },
+    ],
+  },
+  {
+    id: "bloco-g",
+    sigla: "Bloco G",
+    nome: "Bloco G - Em Construção",
+    descricao: "Área do campus ainda a construir, conforme a sinalização oficial do campus.",
+    salas: [{ id: "g-construcao", nome: "Bloco em construção", tipo: "Previsão de expansão do campus" }],
+  },
+  {
+    id: "bloco-h",
+    sigla: "Bloco H",
+    nome: "Bloco H - Engenharias",
+    descricao: "Laboratórios avançados, salas de aula e coordenações de Engenharias (salas 900 a 926).",
+    salas: [
+      { id: "h1", nome: "Laboratórios de Engenharia", tipo: "Prática" },
+      { id: "h2", nome: "Coordenações de Engenharias", tipo: "Atendimento" },
+    ],
+  },
+];
+
+function andarInicial(bloco: Bloco): AndarId | null {
+  return bloco.andarPadrao ?? bloco.andares?.[0]?.id ?? null;
+}
+
+function rotuloAndar(bloco: Bloco | null, id?: AndarId): string | undefined {
+  return bloco?.andares?.find((a) => a.id === id)?.rotulo;
+}
+
+/* ------------------------------------------------------------------ */
+/* COMPONENTE PRINCIPAL                                                */
+/* ------------------------------------------------------------------ */
+
 export function MapaCampus() {
   const ref = useReveal<HTMLDivElement>();
   const [blocoSelecionado, setBlocoSelecionado] = useState<Bloco | null>(null);
   const [salaAtiva, setSalaAtiva] = useState<Sala | null>(null);
-  const [andarAtivo, setAndarAtivo] = useState<1 | 2>(1);
+  const [andarAtivo, setAndarAtivo] = useState<AndarId | null>(null);
 
-  // Salas exibidas: blocos sem andar definido mostram tudo; o Bloco C filtra pelo andar.
+  // Blocos sem andar definido mostram tudo; os demais filtram pelo andar ativo.
   const salasVisiveis = blocoSelecionado
     ? blocoSelecionado.salas.filter((s) => s.andar === undefined || s.andar === andarAtivo)
     : [];
 
-  const handleBlocoClick = (sigla: string) => {
-    const blocoEncontrado = blocosCampus.find((b) => b.id === `bloco-${sigla.toLowerCase()}`);
-    if (blocoEncontrado) {
-      setBlocoSelecionado(blocoEncontrado);
-      setSalaAtiva(null);
-      setAndarAtivo(1);
-    }
+  const mostrarPlantaA1 = blocoSelecionado?.id === "bloco-a" && andarAtivo === "pav1";
+  const plantaAtual =
+    blocoSelecionado && andarAtivo ? plantasAndar[`${blocoSelecionado.id}:${andarAtivo}`] : undefined;
+  const temPlanta = mostrarPlantaA1 || !!plantaAtual;
+
+  const selecionarBloco = (bloco: Bloco) => {
+    setBlocoSelecionado(bloco);
+    setSalaAtiva(null);
+    setAndarAtivo(andarInicial(bloco));
   };
+
+  const voltarAoMapaGeral = () => {
+    setBlocoSelecionado(null);
+    setSalaAtiva(null);
+    setAndarAtivo(null);
+  };
+
+  const handleBlocoClick = (sigla: string) => {
+    const bloco = blocosCampus.find((b) => b.id === `bloco-${sigla.toLowerCase()}`);
+    if (bloco) selecionarBloco(bloco);
+  };
+
+  const selecionarSalaPorId = (id: string) => {
+    const sala = blocoSelecionado?.salas.find((s) => s.id === id);
+    if (sala) setSalaAtiva(sala);
+  };
+
+  const andarDaSala = rotuloAndar(blocoSelecionado, salaAtiva?.andar);
 
   return (
     <section id="mapa" className="relative px-5 py-24">
@@ -815,11 +1392,7 @@ export function MapaCampus() {
         {blocoSelecionado && (
           <div className="mt-6">
             <button
-              onClick={() => {
-                setBlocoSelecionado(null);
-                setSalaAtiva(null);
-                setAndarAtivo(1);
-              }}
+              onClick={voltarAoMapaGeral}
               className="glass inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-medium text-neon transition-all hover:bg-neon/10 cursor-pointer"
             >
               ← Voltar para o Mapa Geral
@@ -832,9 +1405,7 @@ export function MapaCampus() {
           <div
             data-reveal
             className={`glass grid-lines relative overflow-hidden rounded-3xl p-4 flex items-center justify-center bg-background/60 border border-border/80 ${
-              blocoSelecionado?.id === "bloco-a" || (blocoSelecionado?.id === "bloco-c" && andarAtivo === 2)
-                ? "min-h-[620px]"
-                : "min-h-[500px]"
+              temPlanta ? "min-h-[620px]" : "min-h-[500px]"
             }`}
           >
             {!blocoSelecionado ? (
@@ -938,16 +1509,13 @@ export function MapaCampus() {
                   <span className="text-xs uppercase tracking-wider text-neon font-semibold">
                     {blocoSelecionado.sigla}
                   </span>
-                  <h4 className="text-lg font-bold text-foreground mt-1">
-                    {blocoSelecionado.nome}
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {blocoSelecionado.descricao}
-                  </p>
+                  <h4 className="text-lg font-bold text-foreground mt-1">{blocoSelecionado.nome}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">{blocoSelecionado.descricao}</p>
                 </div>
 
-                {blocoSelecionado.id === "bloco-c" && (
+                {blocoSelecionado.andares && (
                   <SeletorAndar
+                    andares={blocoSelecionado.andares}
                     andar={andarAtivo}
                     onChange={(a) => {
                       setAndarAtivo(a);
@@ -956,46 +1524,31 @@ export function MapaCampus() {
                   />
                 )}
 
-                {blocoSelecionado.id === "bloco-a" ? (
-                  <PlantaBlocoA
+                {mostrarPlantaA1 ? (
+                  <PlantaBlocoA salaAtivaId={salaAtiva?.id} onSelecionar={selecionarSalaPorId} />
+                ) : plantaAtual ? (
+                  <PlantaAndarSVG
+                    planta={plantaAtual}
                     salaAtivaId={salaAtiva?.id}
-                    onSelecionar={(id) => {
-                      const sala = blocoSelecionado.salas.find((s) => s.id === id);
-                      if (sala) setSalaAtiva(sala);
-                    }}
-                  />
-                ) : blocoSelecionado.id === "bloco-c" && andarAtivo === 2 ? (
-                  <PlantaBlocoC2
-                    salaAtivaId={salaAtiva?.id}
-                    onSelecionar={(id) => {
-                      const sala = blocoSelecionado.salas.find((s) => s.id === id);
-                      if (sala) setSalaAtiva(sala);
-                    }}
+                    onSelecionar={selecionarSalaPorId}
                   />
                 ) : (
-                  <>
-                    {blocoSelecionado.id === "bloco-c" && (
-                      <p className="mb-3 rounded-2xl border border-dashed border-border/80 px-4 py-3 text-xs text-muted-foreground">
-                        A planta do 1º andar ainda não foi adicionada. Por enquanto, estes são os ambientes cadastrados.
-                      </p>
-                    )}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                      {salasVisiveis.map((sala) => (
-                        <div
-                          key={sala.id}
-                          onClick={() => setSalaAtiva(sala)}
-                          className={`cursor-pointer rounded-2xl border p-4 transition-all duration-300 ${
-                            salaAtiva?.id === sala.id
-                              ? "border-neon bg-neon/10 text-foreground shadow-sm"
-                              : "border-border/80 bg-secondary/40 text-muted-foreground hover:border-neon/50 hover:text-foreground"
-                          }`}
-                        >
-                          <h5 className="text-sm font-bold text-foreground">{sala.nome}</h5>
-                          <p className="text-xs mt-0.5 opacity-80">{sala.tipo}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                    {salasVisiveis.map((sala) => (
+                      <div
+                        key={sala.id}
+                        onClick={() => setSalaAtiva(sala)}
+                        className={`cursor-pointer rounded-2xl border p-4 transition-all duration-300 ${
+                          salaAtiva?.id === sala.id
+                            ? "border-neon bg-neon/10 text-foreground shadow-sm"
+                            : "border-border/80 bg-secondary/40 text-muted-foreground hover:border-neon/50 hover:text-foreground"
+                        }`}
+                      >
+                        <h5 className="text-sm font-bold text-foreground">{sala.nome}</h5>
+                        <p className="text-xs mt-0.5 opacity-80">{sala.tipo}</p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
@@ -1006,14 +1559,16 @@ export function MapaCampus() {
             <div>
               <h3 className="text-sm font-semibold text-foreground">
                 {blocoSelecionado
-                  ? (salaAtiva ? salaAtiva.nome : blocoSelecionado.nome)
+                  ? salaAtiva
+                    ? salaAtiva.nome
+                    : blocoSelecionado.nome
                   : "Navegação por Blocos (A - H)"}
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 {blocoSelecionado
-                  ? (salaAtiva
-                      ? `${salaAtiva.tipo} · Localizado no ${blocoSelecionado.nome}${salaAtiva.andar ? ` (${salaAtiva.andar}º andar)` : ""}.`
-                      : blocoSelecionado.descricao)
+                  ? salaAtiva
+                    ? `${salaAtiva.tipo} · Localizado no ${blocoSelecionado.nome}${andarDaSala ? ` (${andarDaSala})` : ""}.`
+                    : blocoSelecionado.descricao
                   : "Passe o mouse ou clique em qualquer bloco no mapa para visualizar os departamentos."}
               </p>
             </div>
@@ -1028,10 +1583,7 @@ export function MapaCampus() {
                       <li key={bloco.id}>
                         <button
                           type="button"
-                          onClick={() => {
-                            setBlocoSelecionado(bloco);
-                            setAndarAtivo(1);
-                          }}
+                          onClick={() => selecionarBloco(bloco)}
                           className="w-full rounded-xl border border-border px-3.5 py-2 text-left text-[13px] text-muted-foreground transition-all duration-300 hover:border-neon/60 hover:text-foreground hover:bg-secondary/40 flex items-center justify-between cursor-pointer"
                         >
                           <span className="font-medium text-foreground">{bloco.sigla}</span>
@@ -1065,87 +1617,3 @@ export function MapaCampus() {
     </section>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/* DEMAIS BLOCOS DO CAMPUS                                             */
-/* ------------------------------------------------------------------ */
-
-const blocosCampus: Bloco[] = [
-  {
-    id: "bloco-a",
-    sigla: "Bloco A",
-    nome: "Bloco A - Licenciaturas",
-    descricao:
-      "Reitoria, coordenadorias de curso, departamentos e laboratórios distribuídos pelas três alas do bloco (salas 100–126 no subsolo, 200–211 no intermediário e 300–350 no 1º pavimento).",
-    salas: salasBlocoA,
-  },
-  {
-    id: "bloco-b",
-    sigla: "Bloco B",
-    nome: "Bloco B - Em Construção",
-    descricao: "Bloco ainda não construído, conforme a sinalização oficial do campus.",
-    salas: [
-      { id: "b-construcao", nome: "Bloco em construção", tipo: "Previsão de expansão do campus" },
-    ],
-  },
-  {
-    id: "bloco-c",
-    sigla: "Bloco C",
-    nome: "Bloco C - Eletrônica e Sistemas",
-    descricao: "Laboratórios de eletrônica, microcontroladores e sistemas de computação (salas 500 a 534). Possui 2 andares.",
-    salas: [
-      { id: "c1", nome: "Lab de Eletrônica Digital", tipo: "Prática", andar: 1 },
-      { id: "c2", nome: "Lab de Sistemas Embarcados", tipo: "Tecnologia", andar: 1 },
-      ...salasBlocoC2,
-    ],
-  },
-  {
-    id: "bloco-d",
-    sigla: "Bloco D",
-    nome: "Bloco D - Automações",
-    descricao: "Laboratórios de automação industrial, robótica e pneumática (salas 600 a 626).",
-    salas: [
-      { id: "d1", nome: "Lab de Automação Industrial", tipo: "Prática" },
-      { id: "d2", nome: "Sala de Robótica", tipo: "Desenvolvimento" },
-    ],
-  },
-  {
-    id: "bloco-e",
-    sigla: "Bloco E",
-    nome: "Bloco E - Mecânicas",
-    descricao: "Oficinas, laboratórios de mecânica dos fluidos e resistência dos materiais (salas 700 a 713).",
-    salas: [
-      { id: "e1", nome: "Oficina Mecânica", tipo: "Prática" },
-      { id: "e2", nome: "Lab de Ensaios de Materiais", tipo: "Pesquisa" },
-    ],
-  },
-  {
-    id: "bloco-f",
-    sigla: "Bloco F",
-    nome: "Bloco F - Diretoria",
-    descricao: "Diretoria-Geral, gabinetes da direção e secretarias administrativas (salas 800 a 815).",
-    salas: [
-      { id: "f1", nome: "Gabinete da Diretoria-Geral", tipo: "Gestão" },
-      { id: "f2", nome: "Secretaria Administrativa", tipo: "Administrativo" },
-    ],
-  },
-  {
-    id: "bloco-g",
-    sigla: "Bloco G",
-    nome: "Bloco G - Em Construção",
-    descricao: "Área do campus ainda a construir, conforme a sinalização oficial do campus.",
-    salas: [
-      { id: "g-construcao", nome: "Bloco em construção", tipo: "Previsão de expansão do campus" },
-    ],
-  },
-  {
-    id: "bloco-h",
-    sigla: "Bloco H",
-    nome: "Bloco H - Engenharias",
-    descricao: "Laboratórios avançados, salas de aula e coordenações de Engenharias (salas 900 a 926).",
-    salas: [
-      { id: "h1", nome: "Laboratórios de Engenharia", tipo: "Prática" },
-      { id: "h2", nome: "Coordenações de Engenharias", tipo: "Atendimento" },
-    ],
-  },
-];
