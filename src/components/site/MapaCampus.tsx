@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode, type SVGProps } from "react";
 import { useReveal } from "@/lib/gsap-reveal";
 
 /* ------------------------------------------------------------------ */
@@ -1439,87 +1439,455 @@ function SeletorAndar({
 }
 
 /* ------------------------------------------------------------------ */
-/* MAPA GERAL DO CAMPUS (A a H)                                        */
-/* Vetorizado a partir do quadro real "Escola Técnica Federal de São   */
-/* Paulo": blocos F/G/H, corredor amarelo do Bloco A, blocos E/D/C/B,  */
-/* pista de atletismo, vestiários, teatro e vias de acesso.            */
+/* MAPA GERAL EM PERSPECTIVA (projeção oblíqua)                        */
+/* Coordenadas "de planta" (x, y, z) -> tela via proj().               */
+/* Layout fiel ao quadro oficial: F/G/H em cima, corredor A,           */
+/* E/D/C/B embaixo, pista, quadras, vestiários e teatro.               */
 /* ------------------------------------------------------------------ */
 
 const CORES_BLOCOS: Record<string, string> = {
-  F: "#7c3aed",
-  G: "#71717a",
-  H: "#be123c",
-  E: "#7c3aed",
+  F: "#2563eb",
+  G: "#9ca3af",
+  H: "#9f1239",
+  A: "#eab308",
+  E: "#1e3a8a",
   D: "#15803d",
   C: "#f97316",
-  B: "#c026d3",
+  B: "#a855f7",
 };
 
-function BlocoMapa({
+const K_Y = 0.62; // achatamento da profundidade
+const LIFT = 0.85; // quanto a altura "sobe" na tela
+const SKEW = 0.3; // quanto a altura "vai" para a direita (mostra a lateral)
+const OX = 12;
+const OY = 34;
+
+function proj(x: number, y: number, z = 0): [number, number] {
+  return [OX + x + z * SKEW, OY + y * K_Y - z * LIFT];
+}
+
+function pontos(lista: [number, number, number][]): string {
+  return lista.map(([x, y, z]) => proj(x, y, z).join(",")).join(" ");
+}
+
+function escurecer(hex: string, fator: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.round(((n >> 16) & 255) * fator);
+  const g = Math.round(((n >> 8) & 255) * fator);
+  const b = Math.round((n & 255) * fator);
+  return `rgb(${r},${g},${b})`;
+}
+
+/** Retângulo plano (chão) já projetado. */
+function Plano({
+  x,
+  y,
+  w,
+  h,
+  z = 0,
+  ...rest
+}: { x: number; y: number; w: number; h: number; z?: number } & Omit<
+  SVGProps<SVGRectElement>,
+  "x" | "y" | "width" | "height"
+>) {
+  const [sx, sy] = proj(x, y, z);
+  return <rect x={sx} y={sy} width={w} height={h * K_Y} {...rest} />;
+}
+
+/** Caixa 3D (topo + frente + lateral + sombra). */
+function Caixa({
+  x,
+  y,
+  w,
+  h,
+  z,
+  cor,
+  obra = false,
+  janelas = true,
+  topoClass = "",
+  children,
+}: {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  z: number;
+  cor: string;
+  obra?: boolean;
+  janelas?: boolean;
+  topoClass?: string;
+  children?: ReactNode;
+}) {
+  const [tx, ty] = proj(x, y, z);
+  return (
+    <>
+      <polygon
+        points={pontos([
+          [x + 6, y + 5, 0],
+          [x + w + 6, y + 5, 0],
+          [x + w + 6, y + h + 5, 0],
+          [x + 6, y + h + 5, 0],
+        ])}
+        fill="#000"
+        opacity="0.35"
+        className="pointer-events-none"
+      />
+      <polygon
+        points={pontos([
+          [x, y + h, 0],
+          [x + w, y + h, 0],
+          [x + w, y + h, z],
+          [x, y + h, z],
+        ])}
+        fill={escurecer(cor, 0.55)}
+      />
+      <polygon
+        points={pontos([
+          [x + w, y, 0],
+          [x + w, y + h, 0],
+          [x + w, y + h, z],
+          [x + w, y, z],
+        ])}
+        fill={escurecer(cor, 0.38)}
+      />
+      {janelas &&
+        z >= 18 &&
+        [0.35, 0.7].map((f) => {
+          const [x1, y1] = proj(x + 5, y + h, z * f);
+          const [x2, y2] = proj(x + w - 5, y + h, z * f);
+          return (
+            <line
+              key={f}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke="#ffffff"
+              strokeOpacity="0.22"
+              strokeWidth="3"
+              strokeDasharray="6 4"
+              className="pointer-events-none"
+            />
+          );
+        })}
+      <rect
+        x={tx}
+        y={ty}
+        width={w}
+        height={h * K_Y}
+        rx="2"
+        fill={cor}
+        stroke="#09090b"
+        strokeWidth="1.25"
+        strokeDasharray={obra ? "5 3" : undefined}
+        className={`transition-all duration-300 group-hover:stroke-neon group-hover:[filter:brightness(1.25)] ${topoClass}`}
+      />
+      {obra && (
+        <rect
+          x={tx}
+          y={ty}
+          width={w}
+          height={h * K_Y}
+          rx="2"
+          fill="url(#hachura-obra)"
+          className="pointer-events-none"
+        />
+      )}
+      {children}
+    </>
+  );
+}
+
+function PredioMapa({
   sigla,
   x,
   y,
-  width,
-  height,
+  w,
+  h,
+  z,
   legenda,
-  onClick,
-  onHover,
+  obra = false,
+  textoEscuro = false,
+  onAbrir,
+  onPassar,
 }: {
   sigla: string;
   x: number;
   y: number;
-  width: number;
-  height: number;
+  w: number;
+  h: number;
+  z: number;
   legenda: string;
-  onClick: () => void;
-  onHover: (ativo: boolean) => void;
+  obra?: boolean;
+  textoEscuro?: boolean;
+  onAbrir: (sigla: string) => void;
+  onPassar: (sigla: string, ativo: boolean) => void;
 }) {
-  const cor = CORES_BLOCOS[sigla];
+  const [tx, ty] = proj(x, y, z);
+  const altTopo = h * K_Y;
+  const corTexto = textoEscuro ? "#1c1917" : "#f4f4f5";
   return (
     <g
-      onClick={onClick}
-      onMouseEnter={() => onHover(true)}
-      onMouseLeave={() => onHover(false)}
-      onFocus={() => onHover(true)}
-      onBlur={() => onHover(false)}
+      onClick={() => onAbrir(sigla)}
+      onMouseEnter={() => onPassar(sigla, true)}
+      onMouseLeave={() => onPassar(sigla, false)}
+      onFocus={() => onPassar(sigla, true)}
+      onBlur={() => onPassar(sigla, false)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onClick();
+          onAbrir(sigla);
         }
       }}
       tabIndex={0}
       role="button"
       aria-label={`Abrir o Bloco ${sigla}: ${legenda}`}
-      className="cursor-pointer group outline-none focus-visible:[&>rect:first-of-type]:stroke-neon"
+      className="cursor-pointer group outline-none transition-transform duration-300 hover:-translate-y-1 focus-visible:-translate-y-1"
     >
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        fill="#18181b"
-        stroke="#3f3f46"
-        strokeWidth="2"
-        rx="6"
-        className="transition-all duration-300 group-hover:fill-neon/20 group-hover:stroke-neon"
-      />
-      <rect x={x + 6} y={y + 4} width={width - 12} height="4" rx="2" fill={cor} opacity="0.85" />
-      <text
-        x={x + width / 2}
-        y={y + height / 2 + 9}
-        fontSize="24"
-        fontWeight="bold"
-        textAnchor="middle"
-        fill="#a1a1aa"
-        className="group-hover:fill-neon"
-      >
-        {sigla}
-      </text>
-      <text x={x + width / 2} y={y + height - 8} fontSize="7.5" textAnchor="middle" fill="#71717a">
-        {legenda}
-      </text>
+      <Caixa x={x} y={y} w={w} h={h} z={z} cor={CORES_BLOCOS[sigla]} obra={obra}>
+        <text
+          x={tx + w / 2}
+          y={ty + altTopo / 2 + 8}
+          fontSize="24"
+          fontWeight="bold"
+          textAnchor="middle"
+          fill={corTexto}
+          className="pointer-events-none select-none"
+        >
+          {sigla}
+        </text>
+        <text
+          x={tx + w / 2}
+          y={ty + altTopo - 6}
+          fontSize="7.5"
+          fontWeight="600"
+          textAnchor="middle"
+          fill={corTexto}
+          opacity="0.85"
+          letterSpacing="0.5"
+          className="pointer-events-none select-none"
+        >
+          {legenda}
+        </text>
+      </Caixa>
     </g>
+  );
+}
+
+/** Edifício decorativo (não clicável): vestiários, teatro, Ed. Física... */
+function Anexo({
+  x,
+  y,
+  w,
+  h,
+  z,
+  cor = "#27272a",
+  rotulo,
+}: {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  z: number;
+  cor?: string;
+  rotulo?: string;
+}) {
+  const [tx, ty] = proj(x, y, z);
+  return (
+    <g className="pointer-events-none">
+      <Caixa x={x} y={y} w={w} h={h} z={z} cor={cor} janelas={false}>
+        {rotulo && (
+          <text
+            x={tx + w / 2}
+            y={ty + (h * K_Y) / 2 + 3}
+            fontSize="7"
+            fontWeight="600"
+            textAnchor="middle"
+            fill="#d4d4d8"
+            letterSpacing="0.5"
+            className="select-none"
+          >
+            {rotulo}
+          </text>
+        )}
+      </Caixa>
+    </g>
+  );
+}
+
+function Arvore({ x, y }: { x: number; y: number }) {
+  const [bx, by] = proj(x, y, 0);
+  const [cx, cy] = proj(x, y, 15);
+  return (
+    <g className="pointer-events-none">
+      <ellipse cx={bx + 3} cy={by + 1} rx="8" ry="3" fill="#000" opacity="0.3" />
+      <line x1={bx} y1={by} x2={cx} y2={cy + 4} stroke="#3f2d1d" strokeWidth="2" />
+      <circle cx={cx} cy={cy} r="8" fill="#166534" />
+      <circle cx={cx - 2} cy={cy - 2} r="5" fill="#22c55e" opacity="0.55" />
+    </g>
+  );
+}
+
+const ARVORES: [number, number][] = (
+  [
+    [205, 345], [250, 380], [300, 335], [335, 400], [375, 350],
+    [440, 420], [490, 360], [520, 445], [585, 440], [310, 460],
+    [230, 470], [640, 330], [90, 320],
+  ] as [number, number][]
+).sort((a, b) => a[1] - b[1]);
+
+function MapaGeralSVG({
+  onAbrir,
+  onPassar,
+}: {
+  onAbrir: (sigla: string) => void;
+  onPassar: (sigla: string, ativo: boolean) => void;
+}) {
+  const [ax, ay] = proj(52, 135, 22);
+  const [pcx, pcy] = proj(140, 375, 0);
+  const [rx1, ry1] = proj(657, 235, 0);
+  const [ex, ey] = proj(33, 420, 0);
+
+  return (
+    <svg
+      viewBox="0 0 720 360"
+      className="w-full h-full max-h-[520px] drop-shadow-lg rounded-2xl"
+      xmlns="http://www.w3.org/2000/svg"
+      fontFamily="Arial, Helvetica, sans-serif"
+    >
+      <defs>
+        <pattern id="hachura-obra" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="#09090b" strokeOpacity="0.45" strokeWidth="3" />
+        </pattern>
+        <linearGradient id="gramado" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#10201a" />
+          <stop offset="1" stopColor="#0c1712" />
+        </linearGradient>
+      </defs>
+
+      {/* Fundo e terreno */}
+      <rect width="720" height="360" fill="#09090b" rx="16" />
+      <Plano x={16} y={20} w={674} h={485} fill="url(#gramado)" stroke="#1c2b21" strokeWidth="1.5" rx="14" />
+
+      {/* Vias (asfalto) */}
+      <Plano x={22} y={40} w={22} h={465} fill="#1c1c1f" />
+      <Plano x={662} y={30} w={22} h={410} fill="#1c1c1f" />
+      <Plano x={44} y={302} w={640} h={14} fill="#1c1c1f" />
+      <Plano x={44} y={172} w={618} h={30} fill="#141417" />
+      <Plano x={44} y={20} w={618} h={14} fill="#141417" />
+
+      <text
+        x={rx1}
+        y={ry1}
+        fontSize="7.5"
+        fill="#71717a"
+        textAnchor="middle"
+        letterSpacing="1"
+        transform={`rotate(-90 ${rx1} ${ry1})`}
+      >
+        R. DR. PEDRO VICENTE
+      </text>
+      <text
+        x={ex}
+        y={ey}
+        fontSize="7.5"
+        fill="#71717a"
+        textAnchor="middle"
+        letterSpacing="1"
+        transform={`rotate(-90 ${ex} ${ey})`}
+      >
+        AV. CRUZEIRO DO SUL
+      </text>
+
+      {/* Pista de atletismo */}
+      <ellipse cx={pcx} cy={pcy} rx="78" ry={48 * K_Y} fill="none" stroke="#1c2b21" strokeWidth="11" />
+      <ellipse cx={pcx} cy={pcy} rx="78" ry={48 * K_Y} fill="none" stroke="#2d4a3a" strokeWidth="1.5" />
+      <ellipse cx={pcx} cy={pcy} rx="46" ry={22 * K_Y} fill="#122016" stroke="#2d4a3a" />
+      <text x={pcx} y={pcy + 4} fontSize="7" textAnchor="middle" fill="#52525b" letterSpacing="1">
+        PISTA DE ATLETISMO
+      </text>
+
+      {/* Quadras (quadro oficial: 4 pequenas + 1 grande) */}
+      {[
+        [58, 425], [100, 425], [58, 452], [100, 452],
+      ].map(([qx, qy]) => (
+        <g key={`${qx}-${qy}`} className="pointer-events-none">
+          <Plano x={qx} y={qy} w={36} h={22} fill="#18181b" stroke="#3f3f46" rx="2" />
+          <Plano x={qx + 17} y={qy} w={2} h={22} fill="#3f3f46" />
+        </g>
+      ))}
+      <Plano x={150} y={440} w={64} h={40} fill="#18181b" stroke="#3f3f46" rx="2" className="pointer-events-none" />
+      <Plano x={180} y={440} w={2} h={40} fill="#3f3f46" className="pointer-events-none" />
+
+      {/* Linha de trás: F, G (a construir), H */}
+      <PredioMapa sigla="F" x={52} y={30} w={100} h={95} z={28} legenda="DIRETORIA" onAbrir={onAbrir} onPassar={onPassar} />
+      <PredioMapa sigla="G" x={162} y={30} w={290} h={95} z={8} legenda="A CONSTRUIR" obra textoEscuro onAbrir={onAbrir} onPassar={onPassar} />
+      <PredioMapa sigla="H" x={462} y={30} w={180} h={95} z={34} legenda="ENGENHARIAS" onAbrir={onAbrir} onPassar={onPassar} />
+
+      {/* Bloco A — corredor amarelo com "você está aqui" */}
+      <g
+        onClick={() => onAbrir("A")}
+        onMouseEnter={() => onPassar("A", true)}
+        onMouseLeave={() => onPassar("A", false)}
+        onFocus={() => onPassar("A", true)}
+        onBlur={() => onPassar("A", false)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onAbrir("A");
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-label="Abrir o Bloco A: Licenciaturas"
+        className="cursor-pointer group outline-none transition-transform duration-300 hover:-translate-y-1 focus-visible:-translate-y-1"
+      >
+        <Caixa x={52} y={135} w={590} h={34} z={22} cor={CORES_BLOCOS.A}>
+          <text x={ax + 10} y={ay + 14} fontSize="8" fontWeight="bold" fill="#1c1917" className="pointer-events-none select-none">
+            VOCÊ ESTÁ AQUI
+          </text>
+          <line x1={ax + 92} y1={ay + 10.5} x2={ax + 118} y2={ay + 10.5} stroke="#dc2626" strokeWidth="2" className="pointer-events-none" />
+          <circle cx={ax + 118} cy={ay + 10.5} r="4" fill="#dc2626" className="pointer-events-none motion-safe:animate-pulse" />
+          <text x={ax + 295} y={ay + 14} fontSize="7.5" fontWeight="600" textAnchor="middle" fill="#1c1917" opacity="0.8" letterSpacing="1" className="pointer-events-none select-none">
+            LICENCIATURAS
+          </text>
+          <text x={ax + 555} y={ay + 17} fontSize="20" fontWeight="bold" textAnchor="middle" fill="#1c1917" className="pointer-events-none select-none">
+            A
+          </text>
+        </Caixa>
+      </g>
+
+      {/* Passarelas redondas A -> E/D/C */}
+      {[177, 317].map((cx) => {
+        const [px, py] = proj(cx, 187, 0);
+        const [qx, qy] = proj(cx, 187, 8);
+        return (
+          <g key={cx} className="pointer-events-none">
+            <ellipse cx={px} cy={py} rx="9" ry="5.6" fill="#a16207" />
+            <rect x={px - 9} y={qy} width="18" height={py - qy} fill="#ca8a04" />
+            <ellipse cx={qx} cy={qy} rx="9" ry="5.6" fill="#eab308" />
+          </g>
+        );
+      })}
+
+      {/* Linha da frente: E, D, C, B (a construir) */}
+      <PredioMapa sigla="E" x={52} y={205} w={120} h={90} z={22} legenda="MECÂNICAS" onAbrir={onAbrir} onPassar={onPassar} />
+      <PredioMapa sigla="D" x={182} y={205} w={130} h={90} z={22} legenda="AUTOMAÇÕES" onAbrir={onAbrir} onPassar={onPassar} />
+      <PredioMapa sigla="C" x={322} y={205} w={130} h={90} z={22} legenda="ELETRÔNICA E SISTEMAS" onAbrir={onAbrir} onPassar={onPassar} />
+      <PredioMapa sigla="B" x={462} y={205} w={130} h={90} z={8} legenda="A CONSTRUIR" obra onAbrir={onAbrir} onPassar={onPassar} />
+
+      {/* Árvores */}
+      {ARVORES.map(([tx, ty]) => (
+        <Arvore key={`${tx}-${ty}`} x={tx} y={ty} />
+      ))}
+
+      {/* Anexos do campus (decorativos) */}
+      <Anexo x={235} y={425} w={70} h={22} z={10} rotulo="VESTIÁRIOS" />
+      <Anexo x={400} y={340} w={80} h={44} z={14} rotulo="ED. FÍSICA" />
+      <Anexo x={520} y={322} w={22} h={14} z={6} cor="#e4e4e7" />
+      <Anexo x={600} y={322} w={12} h={30} z={6} cor="#e4e4e7" />
+      <Anexo x={530} y={372} w={92} h={58} z={20} cor="#d4d4d8" rotulo="TEATRO" />
+    </svg>
   );
 }
 
@@ -1767,113 +2135,10 @@ export function MapaCampus() {
           >
             {!blocoSelecionado ? (
               <div className="w-full h-full flex items-center justify-center">
-                <svg
-                  viewBox="0 0 700 500"
-                  className="w-full h-full max-h-[520px] drop-shadow-lg rounded-2xl"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fontFamily="Arial, Helvetica, sans-serif"
-                >
-                  {/* Fundo Dark Geral do Mapa */}
-                  <rect width="700" height="500" fill="#09090b" rx="16" />
-
-                  {/* Rua R. Dr. Pedro Vicente — faixa lateral direita */}
-                  <rect x="680" y="30" width="16" height="400" fill="#1c1c1f" />
-                  <text
-                    x="688"
-                    y="230"
-                    fontSize="8"
-                    fill="#52525b"
-                    textAnchor="middle"
-                    letterSpacing="1"
-                    transform="rotate(-90 688 230)"
-                  >
-                    R. DR. PEDRO VICENTE
-                  </text>
-
-                  {/* Linha 1 — Blocos F, G, H */}
-                  <BlocoMapa sigla="F" x={24} y={40} width={120} height={72} legenda="DIRETORIA" onClick={() => handleBlocoClick("F")} onHover={aoPassar("F")} />
-                  <BlocoMapa sigla="G" x={154} y={40} width={300} height={72} legenda="EM CONSTRUÇÃO" onClick={() => handleBlocoClick("G")} onHover={aoPassar("G")} />
-                  <BlocoMapa sigla="H" x={464} y={40} width={212} height={72} legenda="ENGENHARIAS" onClick={() => handleBlocoClick("H")} onHover={aoPassar("H")} />
-
-                  {/* Faixa amarela — Bloco A (corredor / "você está aqui") */}
-                  <g
-                    onClick={() => handleBlocoClick("A")}
-                    onMouseEnter={() => aoPassar("A")(true)}
-                    onMouseLeave={() => aoPassar("A")(false)}
-                    onFocus={() => aoPassar("A")(true)}
-                    onBlur={() => aoPassar("A")(false)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleBlocoClick("A");
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label="Abrir o Bloco A: Licenciaturas"
-                    className="cursor-pointer group outline-none focus-visible:[&>rect:first-of-type]:stroke-neon"
-                  >
-                    <rect
-                      x="24"
-                      y="120"
-                      width="652"
-                      height="30"
-                      fill="#eab308"
-                      rx="6"
-                      className="transition-all duration-300 group-hover:fill-amber-400"
-                    />
-                    <line x1="160" y1="135" x2="182" y2="135" stroke="#dc2626" strokeWidth="2" />
-                    <circle cx="182" cy="135" r="4" fill="#dc2626" className="motion-safe:animate-pulse" />
-                    <text x="40" y="139" fontSize="9" fontWeight="bold" fill="#1c1917">
-                      VOCÊ ESTÁ AQUI
-                    </text>
-                    <text x="600" y="142" fontSize="22" fontWeight="bold" textAnchor="middle" fill="#1c1917">
-                      A
-                    </text>
-                  </g>
-
-                  {/* Linha 2 — Blocos E, D, C, B (com conectores elevados) */}
-                  <circle cx="184" cy="166" r="9" fill="#eab308" opacity="0.85" />
-                  <circle cx="350" cy="166" r="9" fill="#eab308" opacity="0.85" />
-
-                  <BlocoMapa sigla="E" x={24} y={166} width={154} height={92} legenda="MECÂNICAS" onClick={() => handleBlocoClick("E")} onHover={aoPassar("E")} />
-                  <BlocoMapa sigla="D" x={190} y={166} width={154} height={92} legenda="AUTOMAÇÕES" onClick={() => handleBlocoClick("D")} onHover={aoPassar("D")} />
-                  <BlocoMapa sigla="C" x={356} y={166} width={154} height={92} legenda="ELETRÔNICA E SISTEMAS" onClick={() => handleBlocoClick("C")} onHover={aoPassar("C")} />
-                  <BlocoMapa sigla="B" x={522} y={166} width={154} height={92} legenda="EM CONSTRUÇÃO" onClick={() => handleBlocoClick("B")} onHover={aoPassar("B")} />
-
-                  {/* Área verde — jardim, pista de atletismo, teatro e vestiários */}
-                  <rect x="24" y="270" width="652" height="150" fill="#0f1a14" stroke="#1c2b21" rx="12" />
-
-                  <ellipse cx="120" cy="336" rx="55" ry="32" fill="none" stroke="#1c2b21" strokeWidth="12" />
-                  <ellipse cx="120" cy="336" rx="55" ry="32" fill="none" stroke="#2d4a3a" strokeWidth="2" />
-                  <ellipse cx="120" cy="336" rx="30" ry="13" fill="#122016" stroke="#2d4a3a" strokeWidth="1" />
-                  <text x="120" y="386" fontSize="7" textAnchor="middle" fill="#52525b">
-                    PISTA DE ATLETISMO
-                  </text>
-
-                  <rect x="258" y="308" width="56" height="42" fill="#18181b" stroke="#3f3f46" rx="6" />
-                  <circle cx="273" cy="322" r="4" fill="#3f3f46" />
-                  <circle cx="299" cy="322" r="4" fill="#3f3f46" />
-                  <circle cx="273" cy="338" r="4" fill="#3f3f46" />
-                  <circle cx="299" cy="338" r="4" fill="#3f3f46" />
-                  <text x="286" y="364" fontSize="7.5" textAnchor="middle" fill="#71717a">
-                    VESTIÁRIOS
-                  </text>
-
-                  <rect x="420" y="308" width="60" height="30" fill="#18181b" stroke="#3f3f46" rx="6" />
-                  <text x="450" y="327" fontSize="12" textAnchor="middle" fill="#71717a">
-                    🏋️‍♀️
-                  </text>
-                  <text x="450" y="352" fontSize="7.5" textAnchor="middle" fill="#71717a">
-                    SALA DE EDUCAÇÃO FÍSICA
-                  </text>
-
-                  {/* Rua Av. Cruzeiro do Sul — faixa inferior */}
-                  <rect x="24" y="430" width="652" height="26" fill="#18181b" stroke="#27272a" rx="6" />
-                  <text x="350" y="447" fontSize="10" fontWeight="bold" textAnchor="middle" fill="#71717a" letterSpacing="1">
-                    AV. CRUZEIRO DO SUL
-                  </text>
-                </svg>
+                <MapaGeralSVG
+                  onAbrir={handleBlocoClick}
+                  onPassar={(sigla, ativo) => aoPassar(sigla)(ativo)}
+                />
               </div>
             ) : (
               /* DETALHES DO BLOCO SELECIONADO */
