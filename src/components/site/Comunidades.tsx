@@ -29,7 +29,7 @@ const canais = [
     titulo: "Ambiente Moodle",
     desc: "Plataforma de ensino à distância para entrega de tarefas e materiais das aulas.",
     tag: "Ensino",
-    href: "https://moodle.spo.ifsp.edu.br",
+    href: "https://eadcampus.spo.ifsp.edu.br/",
   },
   {
     titulo: "IFSP Campus São Paulo",
