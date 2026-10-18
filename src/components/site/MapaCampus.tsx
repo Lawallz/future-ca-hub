@@ -1825,7 +1825,7 @@ function MapaGeralSVG({
         letterSpacing="1"
         transform={`rotate(-90 ${lvx} ${lvy})`}
       >
-        AV. CRUZEIRO DO SUL
+        SHOPPING D
       </text>
 
       {/* Campo / pista */}
