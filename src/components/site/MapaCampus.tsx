@@ -1221,7 +1221,7 @@ function PlantaBlocoA({
   salaAtivaId?: string;
   onSelecionar: (id: string) => void;
 }) {
-  const [ala, setAla] = useState<number | "todas">(0);
+  const [ala, setAla] = useState<number | "todas">("todas");
   const ultima = secoesBlocoA.length - 1;
   const todas = ala === "todas";
 
@@ -1298,7 +1298,7 @@ function PlantaBlocoA({
                   Escada
                 </text>
                 <text x={X_DIR + LARGURA_DIR - 4} y={yTopo - 6} fontSize="10" textAnchor="end" fill="#71717a">
-                  Rampa
+                  Caracol
                 </text>
                 <line
                   x1={X_ESQ}
