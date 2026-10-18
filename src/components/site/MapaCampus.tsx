@@ -1440,9 +1440,9 @@ function SeletorAndar({
 
 /* ------------------------------------------------------------------ */
 /* MAPA GERAL EM PERSPECTIVA (projeção oblíqua)                        */
-/* Coordenadas "de planta" (x, y, z) -> tela via proj().               */
-/* Layout fiel ao quadro oficial: F/G/H em cima, corredor A,           */
-/* E/D/C/B embaixo, pista, quadras, vestiários e teatro.               */
+/* Layout vetorizado a partir do desenho do campus (draw.io).          */
+/* Coordenadas (x, y) = unidades do desenho; z = altura do prédio.     */
+/* proj() converte tudo para a tela. Para mover algo, edite x / y.     */
 /* ------------------------------------------------------------------ */
 
 const CORES_BLOCOS: Record<string, string> = {
@@ -1456,14 +1456,17 @@ const CORES_BLOCOS: Record<string, string> = {
   B: "#a855f7",
 };
 
+const ESC = 0.56; // escala do desenho para a tela
+const X0 = 600; // desloca o x do desenho (que começa negativo) para 0
+const Y0 = 20;
 const K_Y = 0.62; // achatamento da profundidade
 const LIFT = 0.85; // quanto a altura "sobe" na tela
 const SKEW = 0.3; // quanto a altura "vai" para a direita (mostra a lateral)
-const OX = 12;
-const OY = 34;
+const OX = 14;
+const OY = 40;
 
 function proj(x: number, y: number, z = 0): [number, number] {
-  return [OX + x + z * SKEW, OY + y * K_Y - z * LIFT];
+  return [OX + (x + X0) * ESC + z * SKEW, OY + (y - Y0) * ESC * K_Y - z * LIFT];
 }
 
 function pontos(lista: [number, number, number][]): string {
@@ -1491,7 +1494,7 @@ function Plano({
   "x" | "y" | "width" | "height"
 >) {
   const [sx, sy] = proj(x, y, z);
-  return <rect x={sx} y={sy} width={w} height={h * K_Y} {...rest} />;
+  return <rect x={sx} y={sy} width={w * ESC} height={h * ESC * K_Y} {...rest} />;
 }
 
 /** Caixa 3D (topo + frente + lateral + sombra). */
@@ -1504,7 +1507,6 @@ function Caixa({
   cor,
   obra = false,
   janelas = true,
-  topoClass = "",
   children,
 }: {
   x: number;
@@ -1515,18 +1517,19 @@ function Caixa({
   cor: string;
   obra?: boolean;
   janelas?: boolean;
-  topoClass?: string;
   children?: ReactNode;
 }) {
   const [tx, ty] = proj(x, y, z);
+  const tw = w * ESC;
+  const th = h * ESC * K_Y;
   return (
     <>
       <polygon
         points={pontos([
-          [x + 6, y + 5, 0],
-          [x + w + 6, y + 5, 0],
-          [x + w + 6, y + h + 5, 0],
-          [x + 6, y + h + 5, 0],
+          [x + 10, y + 8, 0],
+          [x + w + 10, y + 8, 0],
+          [x + w + 10, y + h + 8, 0],
+          [x + 10, y + h + 8, 0],
         ])}
         fill="#000"
         opacity="0.35"
@@ -1553,8 +1556,8 @@ function Caixa({
       {janelas &&
         z >= 18 &&
         [0.35, 0.7].map((f) => {
-          const [x1, y1] = proj(x + 5, y + h, z * f);
-          const [x2, y2] = proj(x + w - 5, y + h, z * f);
+          const [x1, y1] = proj(x + 12, y + h, z * f);
+          const [x2, y2] = proj(x + w - 12, y + h, z * f);
           return (
             <line
               key={f}
@@ -1573,21 +1576,21 @@ function Caixa({
       <rect
         x={tx}
         y={ty}
-        width={w}
-        height={h * K_Y}
+        width={tw}
+        height={th}
         rx="2"
         fill={cor}
         stroke="#09090b"
         strokeWidth="1.25"
         strokeDasharray={obra ? "5 3" : undefined}
-        className={`transition-all duration-300 group-hover:stroke-neon group-hover:[filter:brightness(1.25)] ${topoClass}`}
+        className="transition-all duration-300 group-hover:stroke-neon group-hover:[filter:brightness(1.25)]"
       />
       {obra && (
         <rect
           x={tx}
           y={ty}
-          width={w}
-          height={h * K_Y}
+          width={tw}
+          height={th}
           rx="2"
           fill="url(#hachura-obra)"
           className="pointer-events-none"
@@ -1624,7 +1627,9 @@ function PredioMapa({
   onPassar: (sigla: string, ativo: boolean) => void;
 }) {
   const [tx, ty] = proj(x, y, z);
-  const altTopo = h * K_Y;
+  const cx = tx + (w * ESC) / 2;
+  const altTopo = h * ESC * K_Y;
+  const grande = altTopo >= 38;
   const corTexto = textoEscuro ? "#1c1917" : "#f4f4f5";
   return (
     <g
@@ -1646,9 +1651,9 @@ function PredioMapa({
     >
       <Caixa x={x} y={y} w={w} h={h} z={z} cor={CORES_BLOCOS[sigla]} obra={obra}>
         <text
-          x={tx + w / 2}
-          y={ty + altTopo / 2 + 8}
-          fontSize="24"
+          x={cx}
+          y={grande ? ty + (altTopo - 10) / 2 + 8 : ty + 12}
+          fontSize={grande ? 24 : 15}
           fontWeight="bold"
           textAnchor="middle"
           fill={corTexto}
@@ -1657,14 +1662,14 @@ function PredioMapa({
           {sigla}
         </text>
         <text
-          x={tx + w / 2}
-          y={ty + altTopo - 6}
-          fontSize="7.5"
+          x={cx}
+          y={ty + altTopo - 4}
+          fontSize="7"
           fontWeight="600"
           textAnchor="middle"
           fill={corTexto}
           opacity="0.85"
-          letterSpacing="0.5"
+          letterSpacing="0.3"
           className="pointer-events-none select-none"
         >
           {legenda}
@@ -1674,15 +1679,17 @@ function PredioMapa({
   );
 }
 
-/** Edifício decorativo (não clicável): vestiários, teatro, Ed. Física... */
+/** Edifício decorativo (não clicável): biblioteca, auditórios, ginásio, teatro... */
 function Anexo({
   x,
   y,
   w,
   h,
   z,
-  cor = "#27272a",
+  cor = "#3f3f46",
   rotulo,
+  rot,
+  fonte = 6.5,
 }: {
   x: number;
   y: number;
@@ -1691,25 +1698,32 @@ function Anexo({
   z: number;
   cor?: string;
   rotulo?: string;
+  rot?: number;
+  fonte?: number;
 }) {
   const [tx, ty] = proj(x, y, z);
+  const cx = tx + (w * ESC) / 2;
+  const cy = ty + (h * ESC * K_Y) / 2;
+  const linhas = rotulo ? rotulo.split("\n") : [];
   return (
     <g className="pointer-events-none">
       <Caixa x={x} y={y} w={w} h={h} z={z} cor={cor} janelas={false}>
-        {rotulo && (
+        {linhas.map((linha, i) => (
           <text
-            x={tx + w / 2}
-            y={ty + (h * K_Y) / 2 + 3}
-            fontSize="7"
+            key={i}
+            x={cx}
+            y={cy + (i - (linhas.length - 1) / 2) * (fonte + 1.5) + fonte / 3}
+            fontSize={fonte}
             fontWeight="600"
             textAnchor="middle"
-            fill="#d4d4d8"
-            letterSpacing="0.5"
+            fill="#e4e4e7"
+            letterSpacing="0.4"
+            transform={rot ? `rotate(${rot} ${cx} ${cy})` : undefined}
             className="select-none"
           >
-            {rotulo}
+            {linha}
           </text>
-        )}
+        ))}
       </Caixa>
     </g>
   );
@@ -1730,11 +1744,18 @@ function Arvore({ x, y }: { x: number; y: number }) {
 
 const ARVORES: [number, number][] = (
   [
-    [205, 345], [250, 380], [300, 335], [335, 400], [375, 350],
-    [440, 420], [490, 360], [520, 445], [585, 440], [310, 460],
-    [230, 470], [640, 330], [90, 320],
+    [-545, 300], [-545, 560], [-545, 720], [-545, 900],
+    [-340, 545], [-60, 540], [60, 540], [170, 548],
+    [60, 650], [130, 710], [200, 640], [-150, 790], [-60, 780],
+    [180, 830], [120, 910], [-250, 965], [300, 800], [400, 790],
   ] as [number, number][]
 ).sort((a, b) => a[1] - b[1]);
+
+/** Caminho de acesso (portaria -> vestiários -> reitoria), desenhado no chão. */
+const CAMINHO: [number, number][] = [
+  [-480, 1030], [-280, 1030], [-190, 945], [-110, 945], [-10, 800],
+  [-10, 545], [500, 545], [540, 500], [540, 440],
+];
 
 function MapaGeralSVG({
   onAbrir,
@@ -1743,14 +1764,16 @@ function MapaGeralSVG({
   onAbrir: (sigla: string) => void;
   onPassar: (sigla: string, ativo: boolean) => void;
 }) {
-  const [ax, ay] = proj(52, 135, 22);
-  const [pcx, pcy] = proj(140, 375, 0);
-  const [rx1, ry1] = proj(657, 235, 0);
-  const [ex, ey] = proj(33, 420, 0);
+  const [ax, ay] = proj(-520, 240, 14);
+  const [pcx, pcy] = proj(-300, 662, 0);
+  const [rvx, rvy] = proj(620, 420, 0);
+  const [lvx, lvy] = proj(-582, 560, 0);
+  const [qvx, qvy] = proj(-420, 820, 0);
+  const [qfx, qfy] = proj(-300, 820, 0);
 
   return (
     <svg
-      viewBox="0 0 720 360"
+      viewBox="0 0 730 440"
       className="w-full h-full max-h-[520px] drop-shadow-lg rounded-2xl"
       xmlns="http://www.w3.org/2000/svg"
       fontFamily="Arial, Helvetica, sans-serif"
@@ -1766,65 +1789,89 @@ function MapaGeralSVG({
       </defs>
 
       {/* Fundo e terreno */}
-      <rect width="720" height="360" fill="#09090b" rx="16" />
-      <Plano x={16} y={20} w={674} h={485} fill="url(#gramado)" stroke="#1c2b21" strokeWidth="1.5" rx="14" />
+      <rect width="730" height="440" fill="#09090b" rx="16" />
+      <Plano x={-600} y={20} w={1250} h={1080} fill="url(#gramado)" stroke="#1c2b21" strokeWidth="1.5" rx="14" />
 
       {/* Vias (asfalto) */}
-      <Plano x={22} y={40} w={22} h={465} fill="#1c1c1f" />
-      <Plano x={662} y={30} w={22} h={410} fill="#1c1c1f" />
-      <Plano x={44} y={302} w={640} h={14} fill="#1c1c1f" />
-      <Plano x={44} y={172} w={618} h={30} fill="#141417" />
-      <Plano x={44} y={20} w={618} h={14} fill="#141417" />
+      <Plano x={-600} y={80} w={36} h={920} fill="#1c1c1f" />
+      <Plano x={600} y={20} w={40} h={780} fill="#1c1c1f" />
+      <polyline
+        points={CAMINHO.map(([x, y]) => proj(x, y, 0).join(",")).join(" ")}
+        fill="none"
+        stroke="#18181b"
+        strokeWidth="9"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        className="pointer-events-none"
+      />
 
       <text
-        x={rx1}
-        y={ry1}
+        x={rvx}
+        y={rvy}
         fontSize="7.5"
         fill="#71717a"
         textAnchor="middle"
         letterSpacing="1"
-        transform={`rotate(-90 ${rx1} ${ry1})`}
+        transform={`rotate(-90 ${rvx} ${rvy})`}
       >
-        R. DR. PEDRO VICENTE
+        AV. PEDRO VICENTE
       </text>
       <text
-        x={ex}
-        y={ey}
+        x={lvx}
+        y={lvy}
         fontSize="7.5"
         fill="#71717a"
         textAnchor="middle"
         letterSpacing="1"
-        transform={`rotate(-90 ${ex} ${ey})`}
+        transform={`rotate(-90 ${lvx} ${lvy})`}
       >
         AV. CRUZEIRO DO SUL
       </text>
 
-      {/* Pista de atletismo */}
-      <ellipse cx={pcx} cy={pcy} rx="78" ry={48 * K_Y} fill="none" stroke="#1c2b21" strokeWidth="11" />
-      <ellipse cx={pcx} cy={pcy} rx="78" ry={48 * K_Y} fill="none" stroke="#2d4a3a" strokeWidth="1.5" />
-      <ellipse cx={pcx} cy={pcy} rx="46" ry={22 * K_Y} fill="#122016" stroke="#2d4a3a" />
-      <text x={pcx} y={pcy + 4} fontSize="7" textAnchor="middle" fill="#52525b" letterSpacing="1">
-        PISTA DE ATLETISMO
+      {/* Campo / pista */}
+      <ellipse cx={pcx} cy={pcy} rx={140 * ESC} ry={82 * ESC * K_Y} fill="none" stroke="#1c2b21" strokeWidth="11" />
+      <ellipse cx={pcx} cy={pcy} rx={140 * ESC} ry={82 * ESC * K_Y} fill="none" stroke="#2d4a3a" strokeWidth="1.5" />
+      <ellipse cx={pcx} cy={pcy} rx={84 * ESC} ry={44 * ESC * K_Y} fill="#122016" stroke="#2d4a3a" />
+      <text x={pcx} y={pcy + 3} fontSize="7" textAnchor="middle" fill="#52525b" letterSpacing="1">
+        CAMPO
       </text>
 
-      {/* Quadras (quadro oficial: 4 pequenas + 1 grande) */}
-      {[
-        [58, 425], [100, 425], [58, 452], [100, 452],
-      ].map(([qx, qy]) => (
-        <g key={`${qx}-${qy}`} className="pointer-events-none">
-          <Plano x={qx} y={qy} w={36} h={22} fill="#18181b" stroke="#3f3f46" rx="2" />
-          <Plano x={qx + 17} y={qy} w={2} h={22} fill="#3f3f46" />
-        </g>
-      ))}
-      <Plano x={150} y={440} w={64} h={40} fill="#18181b" stroke="#3f3f46" rx="2" className="pointer-events-none" />
-      <Plano x={180} y={440} w={2} h={40} fill="#3f3f46" className="pointer-events-none" />
+      {/* Arquibancadas junto ao campo */}
+      <Plano x={-480} y={560} w={80} h={40} fill="#18181b" stroke="#3f3f46" rx="2" className="pointer-events-none" />
+      <Plano x={-120} y={560} w={80} h={40} fill="#18181b" stroke="#3f3f46" rx="2" className="pointer-events-none" />
 
-      {/* Linha de trás: F, G (a construir), H */}
-      <PredioMapa sigla="F" x={52} y={30} w={100} h={95} z={28} legenda="DIRETORIA" onAbrir={onAbrir} onPassar={onPassar} />
-      <PredioMapa sigla="G" x={162} y={30} w={290} h={95} z={8} legenda="A CONSTRUIR" obra textoEscuro onAbrir={onAbrir} onPassar={onPassar} />
-      <PredioMapa sigla="H" x={462} y={30} w={180} h={95} z={34} legenda="ENGENHARIAS" onAbrir={onAbrir} onPassar={onPassar} />
+      {/* Quadras */}
+      <g className="pointer-events-none">
+        <Plano x={-480} y={760} w={240} h={120} fill="#18181b" stroke="#3f3f46" rx="2" />
+        <Plano x={-361} y={760} w={2} h={120} fill="#3f3f46" />
+        <text x={qvx} y={qvy - 1} fontSize="6.5" fontWeight="600" textAnchor="middle" fill="#a1a1aa">
+          VÔLEI E
+        </text>
+        <text x={qvx} y={qvy + 8} fontSize="6.5" fontWeight="600" textAnchor="middle" fill="#a1a1aa">
+          BASQUETE
+        </text>
+        <text x={qfx} y={qfy + 3} fontSize="6.5" fontWeight="600" textAnchor="middle" fill="#a1a1aa">
+          FUTSAL
+        </text>
+      </g>
 
-      {/* Bloco A — corredor amarelo com "você está aqui" */}
+      {/* Linha de trás: F, Diretorias, estacionamento/G, auditórios, secretarias, H */}
+      <PredioMapa sigla="F" x={-480} y={120} w={120} h={120} z={28} legenda="DIRETORIA" onAbrir={onAbrir} onPassar={onPassar} />
+      <Anexo x={-360} y={120} w={120} h={120} z={28} cor="#1e40af" rotulo="DIRETORIAS" fonte={7} />
+      <PredioMapa sigla="G" x={-240} y={80} w={320} h={80} z={6} legenda="ESTACIONAMENTO · A CONSTRUIR" obra textoEscuro onAbrir={onAbrir} onPassar={onPassar} />
+      <Anexo x={-240} y={160} w={80} h={80} z={8} rotulo={"CARTÃO\nBÁSICA"} />
+      <Anexo x={-160} y={160} w={120} h={80} z={8} rotulo="AUDITÓRIO" />
+      <Anexo x={-40} y={160} w={120} h={80} z={8} rotulo="AUDITÓRIO" />
+      <Anexo x={80} y={160} w={120} h={80} z={8} rotulo={"SECRETARIA\nDE ESTÁGIOS"} />
+      <Anexo x={200} y={120} w={80} h={120} z={10} rotulo="SECRETARIAS" fonte={5.5} />
+      <PredioMapa sigla="H" x={280} y={80} w={200} h={120} z={34} legenda="ENGENHARIAS" onAbrir={onAbrir} onPassar={onPassar} />
+      <Anexo x={280} y={200} w={200} h={280} z={16} rotulo="BIBLIOTECA" fonte={7} />
+
+      {/* Vila e portaria da Av. Pedro Vicente */}
+      <Anexo x={520} y={40} w={60} h={100} z={8} rotulo="VILA" />
+      <Anexo x={520} y={220} w={40} h={220} z={8} rotulo="PORTARIA" rot={-90} />
+
+      {/* Bloco A — Saguão principal (corredor amarelo) com "você está aqui" */}
       <g
         onClick={() => onAbrir("A")}
         onMouseEnter={() => onPassar("A", true)}
@@ -1842,25 +1889,25 @@ function MapaGeralSVG({
         aria-label="Abrir o Bloco A: Licenciaturas"
         className="cursor-pointer group outline-none transition-transform duration-300 hover:-translate-y-1 focus-visible:-translate-y-1"
       >
-        <Caixa x={52} y={135} w={590} h={34} z={22} cor={CORES_BLOCOS.A}>
-          <text x={ax + 10} y={ay + 14} fontSize="8" fontWeight="bold" fill="#1c1917" className="pointer-events-none select-none">
+        <Caixa x={-520} y={240} w={800} h={120} z={14} cor={CORES_BLOCOS.A}>
+          <text x={ax + 12} y={ay + 24} fontSize="8" fontWeight="bold" fill="#1c1917" className="pointer-events-none select-none">
             VOCÊ ESTÁ AQUI
           </text>
-          <line x1={ax + 92} y1={ay + 10.5} x2={ax + 118} y2={ay + 10.5} stroke="#dc2626" strokeWidth="2" className="pointer-events-none" />
-          <circle cx={ax + 118} cy={ay + 10.5} r="4" fill="#dc2626" className="pointer-events-none motion-safe:animate-pulse" />
-          <text x={ax + 295} y={ay + 14} fontSize="7.5" fontWeight="600" textAnchor="middle" fill="#1c1917" opacity="0.8" letterSpacing="1" className="pointer-events-none select-none">
-            LICENCIATURAS
+          <line x1={ax + 94} y1={ay + 20.5} x2={ax + 120} y2={ay + 20.5} stroke="#dc2626" strokeWidth="2" className="pointer-events-none" />
+          <circle cx={ax + 120} cy={ay + 20.5} r="4" fill="#dc2626" className="pointer-events-none motion-safe:animate-pulse" />
+          <text x={ax + 224} y={ay + 24} fontSize="7.5" fontWeight="600" textAnchor="middle" fill="#1c1917" opacity="0.8" letterSpacing="1" className="pointer-events-none select-none">
+            SAGUÃO PRINCIPAL · LICENCIATURAS
           </text>
-          <text x={ax + 555} y={ay + 17} fontSize="20" fontWeight="bold" textAnchor="middle" fill="#1c1917" className="pointer-events-none select-none">
+          <text x={ax + 425} y={ay + 28} fontSize="20" fontWeight="bold" textAnchor="middle" fill="#1c1917" className="pointer-events-none select-none">
             A
           </text>
         </Caixa>
       </g>
 
-      {/* Passarelas redondas A -> E/D/C */}
-      {[177, 317].map((cx) => {
-        const [px, py] = proj(cx, 187, 0);
-        const [qx, qy] = proj(cx, 187, 8);
+      {/* Passarelas redondas entre E/D e D/C */}
+      {[-320, -40].map((cx) => {
+        const [px, py] = proj(cx, 385, 0);
+        const [qx, qy] = proj(cx, 385, 8);
         return (
           <g key={cx} className="pointer-events-none">
             <ellipse cx={px} cy={py} rx="9" ry="5.6" fill="#a16207" />
@@ -1870,23 +1917,25 @@ function MapaGeralSVG({
         );
       })}
 
-      {/* Linha da frente: E, D, C, B (a construir) */}
-      <PredioMapa sigla="E" x={52} y={205} w={120} h={90} z={22} legenda="MECÂNICAS" onAbrir={onAbrir} onPassar={onPassar} />
-      <PredioMapa sigla="D" x={182} y={205} w={130} h={90} z={22} legenda="AUTOMAÇÕES" onAbrir={onAbrir} onPassar={onPassar} />
-      <PredioMapa sigla="C" x={322} y={205} w={130} h={90} z={22} legenda="ELETRÔNICA E SISTEMAS" onAbrir={onAbrir} onPassar={onPassar} />
-      <PredioMapa sigla="B" x={462} y={205} w={130} h={90} z={8} legenda="A CONSTRUIR" obra onAbrir={onAbrir} onPassar={onPassar} />
+      {/* Linha da frente: E, D, C e B (a construir, na área da rampa) */}
+      <PredioMapa sigla="E" x={-480} y={360} w={120} h={120} z={22} legenda="MECÂNICAS" onAbrir={onAbrir} onPassar={onPassar} />
+      <PredioMapa sigla="D" x={-280} y={360} w={200} h={120} z={22} legenda="AUTOMAÇÕES" onAbrir={onAbrir} onPassar={onPassar} />
+      <PredioMapa sigla="C" x={0} y={360} w={200} h={120} z={22} legenda="ELETRÔNICA E SISTEMAS" onAbrir={onAbrir} onPassar={onPassar} />
+      <PredioMapa sigla="B" x={206} y={365} w={68} h={115} z={8} legenda="EM OBRA" obra onAbrir={onAbrir} onPassar={onPassar} />
+
+      {/* Reitoria */}
+      <Anexo x={280} y={560} w={200} h={160} z={20} rotulo="REITORIA" fonte={7} />
 
       {/* Árvores */}
       {ARVORES.map(([tx, ty]) => (
         <Arvore key={`${tx}-${ty}`} x={tx} y={ty} />
       ))}
 
-      {/* Anexos do campus (decorativos) */}
-      <Anexo x={235} y={425} w={70} h={22} z={10} rotulo="VESTIÁRIOS" />
-      <Anexo x={400} y={340} w={80} h={44} z={14} rotulo="ED. FÍSICA" />
-      <Anexo x={520} y={322} w={22} h={14} z={6} cor="#e4e4e7" />
-      <Anexo x={600} y={322} w={12} h={30} z={6} cor="#e4e4e7" />
-      <Anexo x={530} y={372} w={92} h={58} z={20} cor="#d4d4d8" rotulo="TEATRO" />
+      {/* Ginásio, vestiários, educação física e portaria */}
+      <Anexo x={-480} y={920} w={161} h={80} z={14} rotulo="GINÁSIO" fonte={7} />
+      <Anexo x={-120} y={830} w={80} h={50} z={10} rotulo={"ED.\nFÍSICA"} />
+      <Anexo x={-200} y={895} w={80} h={45} z={10} rotulo="VESTIÁRIOS" fonte={6} />
+      <Anexo x={-560} y={1040} w={80} h={40} z={8} rotulo="PORTARIA" fonte={6} />
     </svg>
   );
 }
