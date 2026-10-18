@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Header } from "@/components/site/Header";
+import { Produtos } from "@/components/site/Produtos";
+import { Roadmap } from "@/components/site/Roadmap";
 import { Hero } from "@/components/site/Hero";
 import { Horarios } from "@/components/site/Horarios";
 import { BancoDeProvas } from "@/components/site/BancoDeProvas";
@@ -108,6 +110,8 @@ function Index() {
           <div data-cascade>
             <Horarios />
           </div>
+          <Roadmap />
+          <Produtos />
           <div data-cascade>
             <LazySection label="comunidades">
               <Comunidades />

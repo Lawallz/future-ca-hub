@@ -12,7 +12,7 @@ type Aula = {
 
 const aulas: Aula[] = [
   {
-    disciplina: "Matemática para Informática (SPOMATI)",
+    disciplina: "SPOMATI - Matemática para Informática",
     professor: "Prof. João Vianei",
     dia: "Segunda-feira",
     horario: "19:00 - 22:30",
@@ -20,15 +20,15 @@ const aulas: Aula[] = [
     periodo: "1º",
   },
   {
-    disciplina: "Lógica de Programação (SPOLOG1)",
+    disciplina: "SPOLOG1 - Lógica de Programação 1",
     professor: "Prof. Francisco Veríssimo",
-    dia: "Terça-feira",
+    dia: "Terça-feira & Sexta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C – Sala 220",
+    sala: "Bloco C – Sala 220/213",
     periodo: "1º",
   },
   {
-    disciplina: "Resolução de Problemas / Tecnologias da Informação (SPORHTI)",
+    disciplina: "SPORHTI - Recursos Humanos e Tecnologia da Informação",
     professor: "Prof. Cesar",
     dia: "Quarta-feira",
     horario: "19:35 - 21:05",
@@ -36,7 +36,7 @@ const aulas: Aula[] = [
     periodo: "1º",
   },
   {
-    disciplina: "Administração e Empreendedorismo (SPOADME)",
+    disciplina: "SPOADME - Administração de Empresas",
     professor: "Prof. Ronaldo",
     dia: "Quarta-feira",
     horario: "21:20 - 22:30",
@@ -44,7 +44,7 @@ const aulas: Aula[] = [
     periodo: "1º",
   },
   {
-    disciplina: "Engenharia 1 (SPOENG1)",
+    disciplina: "SPOENG1 - Engenharia 1",
     professor: "Prof. Johnata",
     dia: "Quinta-feira",
     horario: "19:00 - 21:05",
@@ -52,7 +52,7 @@ const aulas: Aula[] = [
     periodo: "1º",
   },
   {
-    disciplina: "Fundamentos de Sistemas (SPOPFDS)",
+    disciplina: "SPOPFDS - Práticas e Ferramentas de Desenvolvimento de Software",
     professor: "Prof. Johnata",
     dia: "Quinta-feira",
     horario: "21:20 - 22:30",
@@ -60,11 +60,11 @@ const aulas: Aula[] = [
     periodo: "1º",
   },
   {
-    disciplina: "Organização e Arquitetura de Computadores (SPOOACO)",
+    disciplina: "SPOOACO - Organização e Arquitetura de Computadores",
     professor: "Prof. André",
-    dia: "Sexta-feira",
+    dia: "Terça-feira & Sexta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - Sala 213",
+    sala: "Bloco C - Sala 213/220",
     periodo: "1º",
   },
   {
@@ -72,7 +72,7 @@ const aulas: Aula[] = [
     professor: "Prof. Celso Gonsalez",
     dia: "Segunda-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - Sala 213",
+    sala: "Bloco C - Sala 213/222",
     periodo: "2",
   },
 
@@ -99,7 +99,7 @@ const aulas: Aula[] = [
     professor: "Prof. Marcelo Tavares Santana",
     dia: "Quinta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - Sala 213",
+    sala: "Bloco C - Sala 213/214",
     periodo: "2",
   },
 
@@ -108,7 +108,7 @@ const aulas: Aula[] = [
     professor: "Prof. Eurides Balbino",
     dia: "Sexta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - Sala 214",
+    sala: "Bloco C - Sala 214/219",
     periodo: "2",
   },
   {
@@ -116,7 +116,7 @@ const aulas: Aula[] = [
     professor: "Prof. Paulo Abreu",
     dia: "Segunda-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - Sala 133",
+    sala: "Bloco C - Sala 116",
     periodo: "3",
   },
   {
@@ -124,7 +124,7 @@ const aulas: Aula[] = [
     professor: "Prof. Domingos Bernardo Gomes Santos",
     dia: "Terça-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - Sala 217",
+    sala: "Bloco C - Sala 212/219",
     periodo: "3",
   },
   {
@@ -132,7 +132,7 @@ const aulas: Aula[] = [
     professor: "Prof. Eurides Balbino",
     dia: "Quarta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - Sala 213",
+    sala: "Bloco C - Sala 219",
     periodo: "3",
   },
   {
@@ -140,7 +140,7 @@ const aulas: Aula[] = [
     professor: "Prof. Paulo Abreu",
     dia: "Quarta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - Sala 216",
+    sala: "Bloco C - Sala 220",
     periodo: "3",
   },
   {
@@ -148,15 +148,15 @@ const aulas: Aula[] = [
     professor: "Prof. Matheus Pereira",
     dia: "Quinta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - Sala 219",
+    sala: "Bloco C - Sala 134/222",
     periodo: "3",
   },
   {
-    disciplina: "SPOGGTI - Gestão e Empreendedorismo",
+    disciplina: "SPOEMPR - Empreendedorismo",
     professor: "Prof. Cesar Lopes",
     dia: "Sexta-feira",
     horario: "19:00 - 21:05",
-    sala: "Bloco A - Sala 219",
+    sala: "Bloco C - Sala 215",
     periodo: "3",
   },
   {
@@ -164,7 +164,7 @@ const aulas: Aula[] = [
     professor: "Prof. Matheus Pereira",
     dia: "Segunda-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - 219",
+    sala: "Bloco C - 219/220",
     periodo: "4",
   },
   {
@@ -172,7 +172,7 @@ const aulas: Aula[] = [
     professor: "Prof. Anderson Gomes",
     dia: "Terça-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - 210",
+    sala: "Bloco C - 210/222",
     periodo: "4",
   },
 
@@ -181,7 +181,7 @@ const aulas: Aula[] = [
     professor: "Prof. Miguel Angelo",
     dia: "Quarta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - 116",
+    sala: "Bloco C - 116/222",
     periodo: "4",
   },
 
@@ -199,7 +199,7 @@ const aulas: Aula[] = [
     professor: "Prof. Cesar Lopes",
     dia: "Sexta-feira",
     horario: "19:00 - 20:20",
-    sala: "Bloco C - 219",
+    sala: "Bloco C - 134",
     periodo: "4",
   },
 
@@ -208,16 +208,63 @@ const aulas: Aula[] = [
     professor: "Prof. Marcelo Tavares",
     dia: "Sexta-feira",
     horario: "20:20 - 22:30",
-    sala: "Bloco C - 219",
+    sala: "Bloco C - 134/215",
     periodo: "4",
   },
-
+  {
+    disciplina: "SPOLPG3 - Linguagem de Programação 3",
+    professor: "Prof. Ronaldo Nogueira",
+    dia: "Segunda-feira",
+    horario: "19:00 - 22:30",
+    sala: "Bloco C - 221",
+    periodo: "5",
+  },
+  {
+    disciplina: "SPOPIE1 - Projeto Integrado de Extensão 1",
+    professor: "Prof. Marcelo Tavares Santana & Prof. Johnata Souza Santicioli",
+    dia: "Terça-feira",
+    horario: "19:00 - 22:30",
+    sala: "Bloco C - 217",
+    periodo: "5",
+  },
+  {
+    disciplina: "SPOSISD - Sistemas Distribuídos",
+    professor: "Prof. Jonas Aparecido Marcheseli",
+    dia: "Quarta-feira",
+    horario: "19:00 - 22:30",
+    sala: "Bloco C - 116/222",
+    periodo: "5",
+  },
+  {
+    disciplina: "SPOESTA - Estatística e Probabilidade",
+    professor: "Prof. Josceli",
+    dia: "Quinta-feira",
+    horario: "19:00 - 21:05",
+    sala: "Bloco C - 219",
+    periodo: "5",
+  },
+  {
+    disciplina: "SPOMOPN - Modelagem e Otimização de Processos de Negócio",
+    professor: "Prof. Allyson Alves de Souza & Prof. Jonas Aparecido Marcheseli",
+    dia: "Sexta-feira",
+    horario: "19:00 - 20:20",
+    sala: "Bloco C - 134",
+    periodo: "5",
+  },
+  {
+    disciplina: "SPOPWEB - Programação Dinâmica para Web",
+    professor: "Prof. Allyson Alves de Souza & Prof. Jonas Aparecido Marcheseli",
+    dia: "Sexta-feira",
+    horario: "20:20 - 22:30",
+    sala: "Bloco C - 134/215",
+    periodo: "5",
+  },
   {
     disciplina: "SPOLESC - Laboratório de Escalabilidade de Sistemas",
     professor: "Prof. Fabio Vieira do Amaral",
     dia: "Segunda-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - 219",
+    sala: "Bloco C - 216",
     periodo: "6",
   },
   {
@@ -225,7 +272,7 @@ const aulas: Aula[] = [
     professor: "Prof. João Vianei Tamanini",
     dia: "Terça-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - 219",
+    sala: "Bloco C - 134",
     periodo: "6",
   },
   {
@@ -233,7 +280,7 @@ const aulas: Aula[] = [
     professor: "Prof. Marcelo Tavares Santana & Prof. Johnata Souza Santicioli",
     dia: "Quarta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - 219",
+    sala: "Bloco C - 216",
     periodo: "6",
   },
   {
@@ -241,7 +288,7 @@ const aulas: Aula[] = [
     professor: "Prof. Cesar Lopes Fernandes",
     dia: "Quinta-feira",
     horario: "19:00 - 21:05",
-    sala: "Bloco A - 219",
+    sala: "Bloco C - 215",
     periodo: "6",
   },
   {
@@ -249,7 +296,7 @@ const aulas: Aula[] = [
     professor: "Prof. Henrique Aparecido Marson",
     dia: "Quinta-feira",
     horario: "21:20 - 22:30",
-    sala: "Bloco A - 219",
+    sala: "Bloco A - 338",
     periodo: "6",
   },
   {
@@ -257,7 +304,7 @@ const aulas: Aula[] = [
     professor: "Prof. Marcelo Tavares Santana & Prof. Johnata Souza Santicioli",
     dia: "Sexta-feira",
     horario: "19:00 - 22:30",
-    sala: "Bloco C - 219",
+    sala: "Bloco C - 216",
     periodo: "6",
   }
 ];

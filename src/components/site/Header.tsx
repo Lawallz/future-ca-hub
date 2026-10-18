@@ -4,6 +4,8 @@ import { MotionToggle } from "./MotionToggle";
 const links = [
   { href: "#provas", label: "Banco de Provas" },
   { href: "#horarios", label: "Horários" },
+  { href: "#roadmap", label: "Roadmap" },
+  { href: "#produtos", label: "Produtos" },
   { href: "#comunidades", label: "Comunidades" },
   { href: "#tutoriais", label: "Tutoriais" },
   { href: "#mapa", label: "Mapa" },
@@ -23,27 +25,27 @@ export function Header() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
-        scrolled ? "glass border-b border-border" : "border-b border-transparent"
+        scrolled ? "glass border-border border-b" : "border-b border-transparent"
       }`}
     >
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
         <a href="#top" className="group flex items-center gap-3">
           <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon opacity-70" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neon" />
+            <span className="bg-neon absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" />
+            <span className="bg-neon relative inline-flex h-2.5 w-2.5 rounded-full" />
           </span>
-          <span className="font-display text-sm font-bold tracking-tight text-foreground">
+          <span className="font-display text-foreground text-sm font-bold tracking-tight">
             CA<span className="neon-text">-ADS</span>
-            <span className="ml-2 text-[11px] font-medium text-muted-foreground">IFSP SPO</span>
+            <span className="text-muted-foreground ml-2 text-[11px] font-medium">IFSP SPO</span>
           </span>
         </a>
 
-        <ul className="hidden items-center gap-1 md:flex">
+        <ul className="hidden items-center gap-1 xl:flex">
           {links.map((l) => (
             <li key={l.href}>
               <a
                 href={l.href}
-                className="rounded-full px-3 py-2 text-[13px] text-muted-foreground transition-colors duration-300 hover:bg-secondary hover:text-foreground"
+                className="text-muted-foreground hover:bg-secondary hover:text-foreground rounded-full px-2 py-2 text-[12px] transition-colors duration-300"
               >
                 {l.label}
               </a>
@@ -57,7 +59,7 @@ export function Header() {
             href="https://chat.whatsapp.com/IZHNKdFfjiE3OaIiV5mzT4?s=cl&p=a&mlu=1"
             target="_blank"
             rel="noreferrer noopener"
-            className="hidden rounded-full border border-border bg-secondary/60 px-4 py-2 text-[13px] font-medium text-foreground transition-all duration-300 hover:border-neon hover:shadow-[var(--shadow-neon)] sm:inline-flex"
+            className="border-border bg-secondary/60 text-foreground hover:border-neon hidden rounded-full border px-4 py-2 text-[13px] font-medium transition-all duration-300 hover:shadow-[var(--shadow-neon)] sm:inline-flex"
           >
             Entrar no grupo
           </a>
@@ -66,7 +68,7 @@ export function Header() {
             aria-label="Abrir menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground md:hidden"
+            className="border-border text-foreground flex h-9 w-9 items-center justify-center rounded-full border xl:hidden"
           >
             <span className="flex flex-col gap-1">
               <span className="block h-px w-4 bg-current" />
@@ -77,7 +79,7 @@ export function Header() {
       </nav>
 
       {open && (
-        <ul className="glass flex flex-col gap-1 border-t border-border px-5 py-3 md:hidden">
+        <ul className="glass border-border flex flex-col gap-1 border-t px-5 py-3 xl:hidden">
           <li className="px-3 py-2">
             <MotionToggle />
           </li>
@@ -86,7 +88,7 @@ export function Header() {
               <a
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="text-muted-foreground hover:bg-secondary hover:text-foreground block rounded-lg px-3 py-2 text-sm transition-colors"
               >
                 {l.label}
               </a>
