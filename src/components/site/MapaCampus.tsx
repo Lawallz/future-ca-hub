@@ -1856,7 +1856,7 @@ function MapaGeralSVG({
       </g>
 
       {/* Linha de trás: F, Diretorias, estacionamento/G, auditórios, secretarias, H */}
-      <PredioMapa sigla="F" x={-480} y={120} w={120} h={120} z={28} legenda="DIRETORIA" onAbrir={onAbrir} onPassar={onPassar} />
+      <PredioMapa sigla="F" x={-480} y={120} w={120} h={120} z={28} legenda="" onAbrir={onAbrir} onPassar={onPassar} />
       <Anexo x={-360} y={120} w={120} h={120} z={28} cor="#1e40af" rotulo="DIRETORIAS" fonte={7} />
       <PredioMapa sigla="G" x={-240} y={80} w={320} h={80} z={6} legenda="ESTACIONAMENTO · A CONSTRUIR" obra textoEscuro onAbrir={onAbrir} onPassar={onPassar} />
       <Anexo x={-240} y={160} w={80} h={80} z={8} rotulo={"CARTÃO\nBÁSICA"} />
