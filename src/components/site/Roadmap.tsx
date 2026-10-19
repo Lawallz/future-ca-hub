@@ -26,7 +26,7 @@ export function Roadmap() {
             Seu caminho em ADS
           </p>
           <h2 className="text-foreground mt-3 text-3xl font-bold sm:text-4xl">
-            Roadmap das matérias
+            Qual matéria depende de qual?
           </h2>
           <p className="text-muted-foreground mt-3">
             Explore os seis semestres. Selecione uma matéria para ver quais disciplinas vêm antes
