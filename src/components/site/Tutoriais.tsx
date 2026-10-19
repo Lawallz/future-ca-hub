@@ -110,18 +110,18 @@ export function Tutoriais() {
             Guias rápidos
           </p>
           <h2 data-reveal className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
-            Tutoriais e acessos úteis
+            SUAP, matrícula e outras dúvidas
           </h2>
           <p data-reveal className="mt-3 text-muted-foreground">
-            Para calouros e veteranos resolverem o burocrático em minutos.
+            Passo a passo para as dúvidas que aparecem durante o curso.
           </p>
         </header>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 max-w-3xl divide-y divide-border border-y border-border">
           {tutoriais.map((t) => (
-            <article key={t.titulo} data-reveal className="glass lift rounded-3xl p-6">
-              <h3 className="text-base font-semibold text-foreground">{t.titulo}</h3>
-              <ol className="mt-4 space-y-3">
+            <details key={t.titulo} className="ca-guide">
+              <summary className="text-base font-semibold text-foreground">{t.titulo}</summary>
+              <ol className="space-y-3 pb-6 pl-5">
                 {t.passos.map((p, i) => (
                   <li key={p} className="flex gap-3 text-sm text-muted-foreground">
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border text-[11px] text-neon-soft">
@@ -131,7 +131,7 @@ export function Tutoriais() {
                   </li>
                 ))}
               </ol>
-            </article>
+            </details>
           ))}
         </div>
       </div>

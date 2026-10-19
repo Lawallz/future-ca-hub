@@ -254,3 +254,59 @@ html.reduce-motion *::after {
 html.reduce-motion .lift:hover {
   transform: none;
 }
+
+/* Editorial accents: paper, ink and the CA's green. */
+:root {
+  --ca-paper: oklch(0.95 0.018 90);
+  --ca-ink: oklch(0.23 0.035 295);
+  --ca-green: oklch(0.84 0.11 152);
+}
+.ca-note {
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  color: var(--ca-ink);
+  background: var(--ca-paper);
+  border: 1px solid oklch(0.35 0.035 295 / 24%);
+  border-radius: 3px 18px 5px 4px;
+  box-shadow: 5px 7px 0 oklch(0.4 0.06 295 / 28%);
+}
+.ca-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.ca-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0.875rem 1.5rem;
+  border-radius: 4px 12px 4px 4px;
+  background: var(--ca-green);
+  color: var(--ca-ink);
+  font-weight: 600;
+}
+.ca-button:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.ca-link:focus-visible,
+.ca-button:focus-visible,
+.ca-guide summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+.ca-guide summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding-block: 1.25rem;
+}
+.ca-guide summary::marker {
+  color: var(--ca-green);
+}
+@media (min-width: 1024px) {
+  .ca-note {
+    transform: rotate(-0.7deg);
+  }
+}

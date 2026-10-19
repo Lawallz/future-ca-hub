@@ -62,7 +62,7 @@ function ProductCard({ product }: { product: Product }) {
   const alt = `${product.name} - ${variant.label}, frente e costas`;
 
   return (
-    <article className="glass flex flex-col rounded-3xl p-5">
+    <article className="flex flex-col border-b border-border pb-6">
       <button
         type="button"
         onClick={() => setZoom(true)}
@@ -84,7 +84,11 @@ function ProductCard({ product }: { product: Product }) {
       <p className="text-muted-foreground mt-2 flex-1 text-sm">{product.description}</p>
 
       {product.variants.length > 1 && (
-        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label={`Estampas de ${product.name}`}>
+        <div
+          className="mt-4 flex flex-wrap gap-2"
+          role="group"
+          aria-label={`Estampas de ${product.name}`}
+        >
           {product.variants.map((v, i) => (
             <button
               key={v.label}
@@ -108,7 +112,9 @@ function ProductCard({ product }: { product: Product }) {
       )}
 
       <p className="text-neon-soft mt-4 text-lg font-semibold">
-        {product.priceInCents === null ? "Valor sob consulta" : money.format(product.priceInCents / 100)}
+        {product.priceInCents === null
+          ? "Valor sob consulta"
+          : money.format(product.priceInCents / 100)}
       </p>
 
       {!product.available && (
@@ -129,7 +135,9 @@ export function Produtos() {
         <header className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
             <p className="text-neon-soft text-[12px] tracking-[0.2em] uppercase">Produtos do CA</p>
-            <h2 className="text-foreground mt-3 text-3xl font-bold sm:text-4xl">Leve o CA com você</h2>
+            <h2 className="text-foreground mt-3 text-3xl font-bold sm:text-4xl">
+              Camisetas, moletons e mais coisas do CA
+            </h2>
             <p className="text-muted-foreground mt-3">
               Veja o catálogo e, quando decidir o que quer, faça o pedido pelo formulário.
             </p>
@@ -159,12 +167,12 @@ export function Produtos() {
           </div>
         )}
 
-        <div className="glass mt-10 flex flex-col items-start gap-4 rounded-3xl p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col items-start gap-4 border-t border-border py-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-muted-foreground max-w-xl text-sm">
             Disponibilidade, pagamento e retirada são confirmados pelo CA depois do pedido.
           </p>
           <FormLink className="border-neon bg-neon/10 text-neon-soft hover:bg-neon/20 inline-flex shrink-0 items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold">
-            Ir para o formulário
+            Fazer pedido no formulário
           </FormLink>
         </div>
       </div>

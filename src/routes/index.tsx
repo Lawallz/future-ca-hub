@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect, useState } from "react";
+import { lazy, useEffect, useState } from "react";
 import { Header } from "@/components/site/Header";
 import { Produtos } from "@/components/site/Produtos";
 import { Roadmap } from "@/components/site/Roadmap";
@@ -10,7 +10,6 @@ import { Footer } from "@/components/site/Footer";
 import { LazySection } from "@/components/site/LazySection";
 import { OfflineNotice } from "@/components/site/OfflineNotice";
 import { UpdatePrompt } from "@/components/site/UpdatePrompt";
-import { useReduceMotion } from "@/lib/motion-preference";
 import { initSectionPrefetch } from "@/lib/prefetch";
 import { onServiceWorkerUpdate } from "@/lib/sw-update";
 
@@ -29,12 +28,6 @@ const MapaCampus = lazy(() =>
     default: m.MapaCampus,
   })),
 );
-const ParticleField = lazy(() =>
-  import("@/components/site/ParticleField").then((m) => ({
-    default: m.ParticleField,
-  })),
-);
-
 const title = "Centro Acadêmico de ADS - IFSP Campus São Paulo";
 const description =
   "Site oficial do Centro Acadêmico de ADS do IFSP Campus São Paulo: banco de provas por período, grade de horários e salas, comunidades e mapa do campus.";
@@ -54,49 +47,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [showBackground, setShowBackground] = useState(false);
-  const reduced = useReduceMotion();
   const [updateReady, setUpdateReady] = useState(false);
 
   // Warm section chunks only on navigation intent.
   useEffect(() => initSectionPrefetch(), []);
   useEffect(() => onServiceWorkerUpdate(() => setUpdateReady(true)), []);
 
-  // Decorative WebGL must not compete with navigation on mobile/slow devices.
-  useEffect(() => {
-    const connection = navigator as Navigator & {
-      connection?: { saveData?: boolean; effectiveType?: string };
-      deviceMemory?: number;
-    };
-    if (
-      reduced ||
-      window.matchMedia("(pointer: coarse), (max-width: 767px)").matches ||
-      connection.connection?.saveData ||
-      /(^|-)2g$|^3g$/.test(connection.connection?.effectiveType ?? "") ||
-      (connection.deviceMemory ?? 8) <= 4
-    ) {
-      setShowBackground(false);
-      return;
-    }
-    let idle: number | undefined;
-    const timer = window.setTimeout(() => {
-      if (window.requestIdleCallback) {
-        idle = window.requestIdleCallback(() => setShowBackground(true));
-      } else setShowBackground(true);
-    }, 2500);
-    return () => {
-      window.clearTimeout(timer);
-      if (idle !== undefined) window.cancelIdleCallback(idle);
-    };
-  }, [reduced]);
-
   return (
     <div className="bg-surface-deep text-foreground relative min-h-screen">
-      {showBackground && (
-        <Suspense fallback={null}>
-          <ParticleField />
-        </Suspense>
-      )}
       {updateReady && <UpdatePrompt onDismiss={() => setUpdateReady(false)} />}
       <OfflineNotice />
       <div className="relative z-10">

@@ -306,7 +306,7 @@ const aulas: Aula[] = [
     horario: "19:00 - 22:30",
     sala: "Bloco C - 216",
     periodo: "6",
-  }
+  },
 ];
 
 export function Horarios() {
@@ -322,7 +322,7 @@ export function Horarios() {
             Noturno · Períodos / semestres
           </p>
           <h2 data-reveal className="text-foreground mt-3 text-3xl font-bold sm:text-4xl">
-            Grade de horários e salas
+            Qual é a próxima aula?
           </h2>
           <p data-reveal className="text-muted-foreground mt-3">
             Selecione o período para consultar suas disciplinas, horários e salas.

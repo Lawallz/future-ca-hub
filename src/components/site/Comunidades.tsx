@@ -62,80 +62,73 @@ const grupos = [
   },
 ];
 
+const communityActions = ["Falar com o CA", "Ver o Instagram", "Entrar no grupo"];
+const campusActions = ["Abrir o SUAP", "Abrir o Moodle", "Ver o site do campus"];
+const linkSections = [
+  { title: "Falar com a turma", links: canais.slice(0, 3), actions: communityActions },
+  { title: "Sistemas do campus", links: canais.slice(3), actions: campusActions },
+];
+
 export function Comunidades() {
   const ref = useReveal<HTMLDivElement>();
 
   return (
-    <section className="relative px-5 py-24">
+    <section className="relative px-5 py-20">
       <div ref={ref} className="mx-auto max-w-6xl">
         <header className="max-w-2xl">
-          <p data-reveal className="text-[12px] tracking-[0.2em] text-neon-soft uppercase">
+          <p data-reveal className="text-neon-soft text-xs tracking-wide uppercase">
             Central de links
           </p>
-          <h2 data-reveal className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
-            Comunidades e redes do CA
+          <h2 data-reveal className="text-foreground mt-3 text-3xl font-bold sm:text-4xl">
+            Encontre sua turma e fale com o CA
           </h2>
         </header>
-
-        {/* Canais Oficiais, Redes e Plataformas (SUAP/Moodle/Campus) */}
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {canais.map((c) => (
-            <a
-              key={c.titulo}
-              data-reveal
-              href={c.href}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="glass lift group rounded-3xl p-6 flex flex-col justify-between"
-            >
-              <div>
-                <span className="rounded-full border border-border px-3 py-1 text-[11px] text-muted-foreground">
-                  {c.tag}
-                </span>
-                <h3 className="mt-5 text-lg font-semibold text-foreground">{c.titulo}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{c.desc}</p>
-              </div>
-              <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-neon-soft">
-                Acessar
-                <span className="transition-transform duration-500 ease-[var(--ease-fluid)] group-hover:translate-x-1">
-                  →
-                </span>
-              </span>
-            </a>
+        <div className="mt-10 grid gap-12 lg:grid-cols-[1.2fr_1fr]">
+          {linkSections.map((section) => (
+            <div key={section.title}>
+              <h3 className="text-foreground text-xl font-semibold">{section.title}</h3>
+              <ul className="mt-5 divide-y divide-border border-y border-border">
+                {section.links.map((c, i) => (
+                  <li key={c.href}>
+                    <a
+                      href={c.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block py-5 focus-visible:outline-2 focus-visible:outline-offset-4"
+                    >
+                      <h4 className="text-foreground font-semibold">{c.titulo}</h4>
+                      <p className="text-muted-foreground mt-2 text-sm">{c.desc}</p>
+                      <span className="ca-link text-neon-soft mt-2 text-sm">
+                        {section.actions[i]} →
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
         </div>
-
-        {/* Grupos Específicos do WhatsApp */}
-        <div data-reveal className="glass mt-6 rounded-3xl p-6 sm:p-8">
-          <h3 className="text-lg font-semibold text-foreground">Grupos de WhatsApp da Comunidade</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Entre nos grupos oficiais para acompanhar o dia a dia do curso, vagas e resenha.
+        <div className="mt-12">
+          <h3 className="text-foreground text-xl font-semibold">Grupos de WhatsApp</h3>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Vagas, cursos, produtos do CA e resenha com a turma.
           </p>
-          
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <ul className="mt-6 grid gap-x-10 sm:grid-cols-2">
             {grupos.map((g) => (
-              <a
-                key={g.nome}
-                href={g.href}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="group flex flex-col justify-between rounded-2xl border border-border bg-secondary/40 p-5 transition-all duration-400 ease-[var(--ease-fluid)] hover:-translate-y-0.5 hover:border-neon"
-              >
-                <div>
-                  <h4 className="text-base font-semibold text-foreground group-hover:text-neon-soft transition-colors">
-                    {g.nome}
-                  </h4>
-                  <p className="mt-1 text-xs text-muted-foreground">{g.desc}</p>
-                </div>
-                <span className="mt-4 inline-flex items-center gap-2 text-xs font-medium text-neon-soft">
-                  Entrar no grupo
-                  <span className="transition-transform duration-300 group-hover:translate-x-1">
-                    →
-                  </span>
-                </span>
-              </a>
+              <li key={g.href} className="border-t border-border">
+                <a
+                  href={g.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block py-5 focus-visible:outline-2 focus-visible:outline-offset-4"
+                >
+                  <h4 className="text-foreground font-semibold">{g.nome}</h4>
+                  <p className="text-muted-foreground mt-2 text-sm">{g.desc}</p>
+                  <span className="ca-link text-neon-soft mt-2 text-sm">Entrar no grupo →</span>
+                </a>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
     </section>
