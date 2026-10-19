@@ -1,73 +1,40 @@
 export function Hero() {
   return (
-    <section
-      id="top"
-      className="relative flex min-h-[92vh] items-center justify-center overflow-hidden px-5 pt-28 pb-20"
-    >
-      <div className="grid-lines absolute inset-0 opacity-60" aria-hidden="true" />
-      <div className="veil absolute inset-x-0 top-0 h-[70vh]" aria-hidden="true" />
-      <div
-        data-hero-orb
-        aria-hidden="true"
-        className="bg-neon/20 absolute -top-24 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full blur-[120px]"
-      />
-
-      <div className="relative mx-auto max-w-4xl text-center">
-        <span
-          data-hero-badge
-          className="glass text-muted-foreground inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[12px] tracking-wide"
-        >
-          <span className="bg-neon-soft h-1.5 w-1.5 rounded-full" />
-          Centro Acadêmico de Análise e Desenvolvimento de Sistemas
-        </span>
-
-        <h1 className="mt-7 text-5xl leading-[0.95] font-bold sm:text-7xl md:text-8xl">
-          <span data-hero-line className="text-foreground block">
-            Tudo do curso
-          </span>
-          <span data-hero-line className="neon-text block">
-            em um só lugar.
-          </span>
-        </h1>
-
-        <p
-          data-hero-sub
-          className="text-muted-foreground mx-auto mt-7 max-w-2xl text-base sm:text-lg"
-        >
-          Banco de provas por período, grade de horários e salas, comunidades por matéria, tutoriais
-          de SUAP e MOODLE e o mapa interativo do IFSP — Campus São Paulo.
-        </p>
-
-        {/* Keep essential links opaque; animate only their wrapper position. */}
-        <div data-hero-actions className="mt-10 flex flex-wrap items-center justify-center gap-3">
-          <a
-            data-hero-cta
-            href="#provas"
-            className="bg-neon text-primary-foreground rounded-full px-7 py-3.5 text-sm font-semibold shadow-[var(--shadow-neon)] transition-[transform,filter,box-shadow,border-color] duration-500 ease-[var(--ease-fluid)] hover:scale-[1.04] hover:brightness-110"
-          >
-            Acessar banco de provas
-          </a>
-          <a
-            data-hero-cta
-            href="#horarios"
-            className="glass text-foreground hover:border-neon rounded-full px-7 py-3.5 text-sm font-semibold transition-[transform,filter,box-shadow,border-color] duration-500 ease-[var(--ease-fluid)] hover:scale-[1.04]"
-          >
-            Ver grade de horários
-          </a>
+    <section id="top" className="relative px-5 pt-32 pb-16 sm:pt-40 sm:pb-24">
+      <div className="relative mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-[1.4fr_0.8fr] lg:items-end">
+        <div className="min-w-0 text-left">
+          <p className="text-neon-soft text-xs font-semibold tracking-wide">
+            Centro Acadêmico de Análise e Desenvolvimento de Sistemas
+          </p>
+          <h1 className="text-foreground mt-7 text-5xl leading-[1.05] font-bold sm:text-6xl lg:text-7xl">
+            ADS no IFSP.
+            <br />A gente se ajuda por aqui.
+          </h1>
+          <p className="text-muted-foreground mt-7 max-w-xl text-base leading-relaxed sm:text-lg">
+            Provas pra estudar, horários pra consultar e um mapa pra achar sua sala. O CA reuniu
+            aqui os atalhos do dia a dia.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <a href="#provas" className="ca-button">
+              Buscar provas
+            </a>
+            <a href="#horarios" className="ca-link px-3">
+              Consultar horários →
+            </a>
+          </div>
+          <p className="text-muted-foreground mt-10 text-sm">
+            Organizado por estudantes de ADS · IFSP São Paulo
+          </p>
         </div>
-
-        <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-3">
-          {[
-            { k: "6", v: "períodos mapeados" },
-            { k: "24/7", v: "acesso aos materiais" },
-            { k: "100%", v: "feito por estudantes" },
-          ].map((s) => (
-            <div key={s.v} data-hero-stat className="glass rounded-2xl px-4 py-5">
-              <dt className="font-display text-foreground text-2xl font-bold">{s.k}</dt>
-              <dd className="text-muted-foreground mt-1 text-[12px]">{s.v}</dd>
-            </div>
-          ))}
-        </dl>
+        <aside className="ca-note lg:mb-6">
+          <p className="text-xl font-semibold">Chegou agora em ADS?</p>
+          <p className="mt-3 text-sm leading-relaxed">
+            Encontre os grupos do curso e veja como acessar os sistemas.
+          </p>
+          <a href="#comunidades" className="ca-link mt-5">
+            Encontrar minha turma →
+          </a>
+        </aside>
       </div>
     </section>
   );
