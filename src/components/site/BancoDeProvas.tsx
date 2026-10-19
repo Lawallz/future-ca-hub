@@ -20,8 +20,7 @@ const periodos: Periodo[] = [
       "Administração de Empresas",
       "Práticas e Ferramentas de Desenvolvimento de Software",
     ],
-    drive:
-      "https://drive.google.com/drive/folders/1dYIoauPGnCOlBXUpe8vHO1M-ZT1_I558?usp=sharing",
+    drive: "https://drive.google.com/drive/folders/1dYIoauPGnCOlBXUpe8vHO1M-ZT1_I558?usp=sharing",
   },
   {
     n: 2,
@@ -33,8 +32,7 @@ const periodos: Periodo[] = [
       "Engenharia de Software 2",
       "Sistemas Operacionais",
     ],
-    drive:
-      "https://drive.google.com/drive/folders/1KXGyiNFsOEvNF-yfDWHhrKz0hxow8T_9?usp=sharing",
+    drive: "https://drive.google.com/drive/folders/1KXGyiNFsOEvNF-yfDWHhrKz0hxow8T_9?usp=sharing",
   },
   {
     n: 3,
@@ -47,8 +45,7 @@ const periodos: Periodo[] = [
       "Linguagem de Programação 1",
       "Empreendedorismo",
     ],
-    drive:
-      "https://drive.google.com/drive/folders/1Lq_K_8M_IvEWyMYvxNKgqeC1bOlKyem7?usp=sharing",
+    drive: "https://drive.google.com/drive/folders/1Lq_K_8M_IvEWyMYvxNKgqeC1bOlKyem7?usp=sharing",
   },
   {
     n: 4,
@@ -61,8 +58,7 @@ const periodos: Periodo[] = [
       "Serviços e Servidores de Rede",
       "Gestão de Projetos",
     ],
-    drive:
-      "https://drive.google.com/drive/folders/1A4x3WjYKqi27E0dOKPeF1XUuFDTpCIcu?usp=sharing",
+    drive: "https://drive.google.com/drive/folders/1A4x3WjYKqi27E0dOKPeF1XUuFDTpCIcu?usp=sharing",
   },
   {
     n: 5,
@@ -75,8 +71,7 @@ const periodos: Periodo[] = [
       "Estatística e Probabilidade",
       "Modelagem de Processos de Negócios",
     ],
-    drive:
-      "https://drive.google.com/drive/folders/1JtqLhYgXb6IIOC80Q5F37v_S5U_ka0CU?usp=sharing",
+    drive: "https://drive.google.com/drive/folders/1JtqLhYgXb6IIOC80Q5F37v_S5U_ka0CU?usp=sharing",
   },
   {
     n: 6,
@@ -89,8 +84,7 @@ const periodos: Periodo[] = [
       "Laboratório de Escalabilidade de Sistemas",
       "Gestão e Governança da Tecnologia da Informação",
     ],
-    drive:
-      "https://drive.google.com/drive/folders/1cug5eLSLpTq2KoKHoF0-9HEqi12kWanG?usp=sharing",
+    drive: "https://drive.google.com/drive/folders/1cug5eLSLpTq2KoKHoF0-9HEqi12kWanG?usp=sharing",
   },
 ];
 
@@ -101,25 +95,19 @@ export function BancoDeProvas() {
     <section id="provas" className="relative px-5 py-24">
       <div ref={ref} className="mx-auto max-w-6xl">
         <header className="max-w-2xl">
-          <p
-            data-reveal
-            className="text-[12px] tracking-[0.2em] text-neon-soft uppercase"
-          >
+          <p data-reveal className="text-[12px] tracking-[0.2em] text-neon-soft uppercase">
             Banco de provas
           </p>
-          <h2
-            data-reveal
-            className="mt-3 text-3xl font-bold text-foreground sm:text-4xl"
-          >
-            Provas e conteúdos por período
+          <h2 data-reveal className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
+            Banco de provas: encontre seu período
           </h2>
           <p data-reveal className="mt-3 text-muted-foreground">
-            Repositórios do Google Drive organizados por ano, semestre e
-            disciplina. Contribua enviando seus materiais para o CA.
+            Escolha seu período para abrir a pasta no Drive. Tem material pra compartilhar? Manda
+            pro CA.
           </p>
         </header>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-x-12 sm:grid-cols-2">
           {periodos.map((p) => (
             <a
               key={p.n}
@@ -127,19 +115,17 @@ export function BancoDeProvas() {
               href={p.drive}
               target="_blank"
               rel="noreferrer noopener"
-              className="glass lift group relative flex flex-col rounded-3xl p-6"
+              className="group relative flex flex-col border-t border-border py-6 focus-visible:outline-2 focus-visible:outline-offset-4"
             >
               <div className="flex items-start justify-between">
-                <span className="font-display text-5xl font-bold text-foreground/15 transition-colors duration-500 group-hover:text-neon/50">
+                <span className="font-display text-5xl font-bold text-neon-soft transition-colors duration-500 group-hover:text-neon/50">
                   0{p.n}
                 </span>
                 <span className="rounded-full border border-border px-3 py-1 text-[11px] text-muted-foreground transition-colors duration-500 group-hover:border-neon group-hover:text-foreground">
                   Drive
                 </span>
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-foreground">
-                {p.titulo}
-              </h3>
+              <h3 className="mt-4 text-lg font-semibold text-foreground">{p.titulo}</h3>
               <ul className="mt-3 flex flex-1 flex-col gap-1.5">
                 {p.disciplinas.map((d) => (
                   <li
@@ -152,7 +138,7 @@ export function BancoDeProvas() {
                 ))}
               </ul>
               <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                Abrir repositório
+                Ver materiais do {p.n}º período
                 <span className="transition-transform duration-500 ease-[var(--ease-fluid)] group-hover:translate-x-1">
                   →
                 </span>
